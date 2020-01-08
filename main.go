@@ -1,10 +1,73 @@
 package main
 
+import (
+	"ackee.cz/goproxie/internal/gcloud"
+	"ackee.cz/goproxie/internal/kubectl"
+	"fmt"
+	"github.com/AlecAivazis/survey/v2"
+)
+
+func initializationCheck() {
+	// TODO
+}
+
+func readProxyType() string {
+	proxy_type := ""
+	prompt := &survey.Select{
+		Message: "Choose proxy type:",
+		Options: []string{"CloudSQL", "VM", "POD"},
+	}
+	survey.AskOne(prompt, &proxy_type)
+	return proxy_type
+}
+
+func readProjectId() string {
+	projects := gcloud.ProjectsList()
+	project_id := ""
+	prompt := &survey.Select{
+		Message: "Choose project:",
+		Options: projects,
+	}
+	survey.AskOne(prompt, &project_id)
+	return project_id
+}
+
+func readClusterName() string {
+	clusters := gcloud.ContainerClustersList()
+	cluster_name := ""
+	prompt := &survey.Select{
+		Message: "Choose cluster:",
+		Options: clusters,
+	}
+	survey.AskOne(prompt, &cluster_name)
+	return cluster_name
+}
+
+func readNamespace() string {
+	namespaces := kubectl.NamespacesList()
+	namespace := ""
+	prompt := &survey.Select{
+		Message: "Choose namespace:",
+		Options: namespaces,
+	}
+	survey.AskOne(prompt, &namespace)
+	return namespace
+}
+
+//func readPodName() string {
+
+//}
+
 func main() {
-	// TODO: Fetch GCP Projects for the User
-	// TODO: Prompt user to select a GCP Project {=GCPPROJECT}
-	//	I suggest using Node.js's Inquirer go equivalent Survey https://github.com/AlecAivazis/survey
-	// TODO: Prompt user for a type of proxy (CloudSQL, VM, Pod) {=PROXYTYPE}
+	project_id := readProjectId()
+	proxy_type := readProxyType()
+	cluster_name := readClusterName()
+	namespace := readNamespace()
+	fmt.Println(project_id)
+	fmt.Println(proxy_type)
+	fmt.Println(cluster_name)
+	fmt.Println(namespace)
+
 	// 	Pod and VM should be fairly easy. CloudSQL probably won't have any SDK support
 	//	and user would must have it installed. Goproxie would then call the installed binary.
 	// For PROXYTYPE=Pod
