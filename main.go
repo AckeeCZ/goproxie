@@ -1,10 +1,13 @@
 package main
 
 import (
+	"fmt"
+	"time"
+
 	"ackee.cz/goproxie/internal/gcloud"
 	"ackee.cz/goproxie/internal/kubectl"
-	"fmt"
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/briandowns/spinner"
 )
 
 func initializationCheck() {
@@ -21,8 +24,22 @@ func readProxyType() string {
 	return proxy_type
 }
 
+// 💡 Spinner!
+var loading = spinner.New(spinner.CharSets[21], 100*time.Millisecond)
+
+func loadingStart(suffix string) {
+	loading.Start()
+	loading.Suffix = fmt.Sprintf(" %v", suffix)
+}
+func loadingStop() {
+	loading.Stop()
+	loading.Suffix = ""
+}
+
 func readProjectId() string {
+	loadingStart("Loading GCP Projects")
 	projects := gcloud.ProjectsList()
+	loadingStop()
 	project_id := ""
 	prompt := &survey.Select{
 		Message: "Choose project:",
@@ -32,19 +49,34 @@ func readProjectId() string {
 	return project_id
 }
 
-func readClusterName() string {
-	clusters := gcloud.ContainerClustersList()
+func readCluster(projectId string) *gcloud.Cluster {
+	loadingStart("Loading Clusters")
+	clusters := gcloud.ContainerClustersList(projectId)
+	loadingStop()
 	cluster_name := ""
+	clusterNames := make([]string, 0, len(clusters))
+	for _, cluster := range clusters {
+		clusterNames = append(clusterNames, cluster.Name)
+	}
 	prompt := &survey.Select{
 		Message: "Choose cluster:",
-		Options: clusters,
+		Options: clusterNames,
 	}
 	survey.AskOne(prompt, &cluster_name)
-	return cluster_name
+	var clusterByName *gcloud.Cluster
+	for _, cluster := range clusters {
+		if cluster.Name == cluster_name {
+			clusterByName = cluster
+		}
+	}
+	return clusterByName
 }
 
+// Deprecated: Some reason
 func readNamespace() string {
+	loadingStart("Loading K8S Namespaces")
 	namespaces := kubectl.NamespacesList()
+	loadingStop()
 	namespace := ""
 	prompt := &survey.Select{
 		Message: "Choose namespace:",
@@ -54,18 +86,27 @@ func readNamespace() string {
 	return namespace
 }
 
-//func readPodName() string {
-
-//}
+func readPodName() string {
+	loadingStart("Loading Pods")
+	pods := kubectl.PodsList()
+	loadingStop()
+	var pod string
+	prompt := &survey.Select{
+		Message: "Choose pod:",
+		Options: pods,
+	}
+	survey.AskOne(prompt, &pod)
+	return pod
+}
 
 func main() {
 	project_id := readProjectId()
 	proxy_type := readProxyType()
-	cluster_name := readClusterName()
+	cluster := readCluster(project_id)
 	namespace := readNamespace()
 	fmt.Println(project_id)
 	fmt.Println(proxy_type)
-	fmt.Println(cluster_name)
+	fmt.Println(cluster)
 	fmt.Println(namespace)
 
 	// 	Pod and VM should be fairly easy. CloudSQL probably won't have any SDK support
