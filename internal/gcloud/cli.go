@@ -2,6 +2,7 @@ package gcloud
 
 import (
 	"log"
+	"os"
 	"os/exec"
 	"strings"
 )
@@ -34,4 +35,14 @@ func ContainerClustersList(projectId string) []*Cluster {
 	}
 	return clusters
 	// return Cluster{name: results[0], location: results[1]}
+}
+
+func GetClusterCredentials(projectID string, cluster *Cluster) {
+	cmd := exec.Command("gcloud", "container", "clusters", "get-credentials", cluster.Name, "--project", projectID, "--zone", cluster.Location)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
 }

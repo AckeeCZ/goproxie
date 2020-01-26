@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"time"
 
 	"ackee.cz/goproxie/internal/gcloud"
@@ -18,6 +20,7 @@ func readProxyType() string {
 	proxy_type := ""
 	prompt := &survey.Select{
 		Message: "Choose proxy type:",
+		// TODO Refactor types to Enums
 		Options: []string{"CloudSQL", "VM", "POD"},
 	}
 	survey.AskOne(prompt, &proxy_type)
@@ -86,28 +89,77 @@ func readNamespace() string {
 	return namespace
 }
 
-func readPodName() string {
+func readPod() *kubectl.Pod {
 	loadingStart("Loading Pods")
 	pods := kubectl.PodsList()
 	loadingStop()
-	var pod string
+	var podName string
+	podOptions := make([]string, 0, len(pods))
+	for _, pod := range pods {
+		podOptions = append(podOptions, pod.Name)
+	}
 	prompt := &survey.Select{
 		Message: "Choose pod:",
-		Options: pods,
+		Options: podOptions,
 	}
-	survey.AskOne(prompt, &pod)
-	return pod
+	survey.AskOne(prompt, &podName)
+	var pickedPod *kubectl.Pod
+	for _, pod := range pods {
+		if pod.Name == podName {
+			pickedPod = pod
+		}
+	}
+	return pickedPod
+}
+
+func readLocalPort() int {
+	port := "3000"
+	// TODO Preference
+	prompt := &survey.Input{
+		Message: "Choose local port:",
+	}
+	survey.AskOne(prompt, &port)
+	n, err := strconv.Atoi(port)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return n
+}
+
+func readRemotePort() int {
+	// TODO Base on remote resource port
+	port := "3000"
+	prompt := &survey.Input{
+		Message: "Choose local port:",
+	}
+	survey.AskOne(prompt, &port)
+	n, err := strconv.Atoi(port)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return n
 }
 
 func main() {
 	project_id := readProjectId()
 	proxy_type := readProxyType()
 	cluster := readCluster(project_id)
-	namespace := readNamespace()
-	fmt.Println(project_id)
-	fmt.Println(proxy_type)
-	fmt.Println(cluster)
-	fmt.Println(namespace)
+	if proxy_type == "POD" {
+		loadingStart("Loading Cluster credentials")
+		gcloud.GetClusterCredentials(project_id, cluster)
+		loadingStop()
+		pod := readPod()
+		// Remove completely? If we can read the port from Pod, makes no sense for the user to edit this
+		// remotePort := readRemotePort()
+		// TODO Base localport choice on remote port. Remote port is usually common port the the app type
+		localPort := readLocalPort()
+		kubectl.PortForward(pod.Name, localPort, pod.ContainerPort, pod.Namespace)
+	}
+
+	// fmt.Println(project_id)
+	// fmt.Println(proxy_type)
+	// fmt.Println(cluster)
+	// fmt.Println(namespace)
 
 	// 	Pod and VM should be fairly easy. CloudSQL probably won't have any SDK support
 	//	and user would must have it installed. Goproxie would then call the installed binary.
