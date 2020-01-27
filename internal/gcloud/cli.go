@@ -7,8 +7,14 @@ import (
 	"strings"
 )
 
+var gcloudPath = "gcloud"
+
+func SetGcloudPath(path string) {
+	gcloudPath = path
+}
+
 func ProjectsList() []string {
-	out, err := exec.Command("gcloud", "projects", "list", "--format", "value(projectId)").Output()
+	out, err := exec.Command(gcloudPath, "projects", "list", "--format", "value(projectId)").Output()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -21,7 +27,7 @@ type Cluster struct {
 }
 
 func ContainerClustersList(projectId string) []*Cluster {
-	out, err := exec.Command("gcloud", "container", "clusters", "list", "--format", "value(name, location)", "--project", projectId).Output()
+	out, err := exec.Command(gcloudPath, "container", "clusters", "list", "--format", "value(name, location)", "--project", projectId).Output()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -38,7 +44,7 @@ func ContainerClustersList(projectId string) []*Cluster {
 }
 
 func GetClusterCredentials(projectID string, cluster *Cluster) {
-	cmd := exec.Command("gcloud", "container", "clusters", "get-credentials", cluster.Name, "--project", projectID, "--zone", cluster.Location)
+	cmd := exec.Command(gcloudPath, "container", "clusters", "get-credentials", cluster.Name, "--project", projectID, "--zone", cluster.Location)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()

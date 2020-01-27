@@ -9,6 +9,12 @@ import (
 	"strings"
 )
 
+var kubectlPath = "kubectl"
+
+func SetKubectlPath(path string) {
+	kubectlPath = path
+}
+
 type Pod struct {
 	Name          string
 	Namespace     string
@@ -16,7 +22,7 @@ type Pod struct {
 }
 
 func NamespacesList() []string {
-	out, err := exec.Command("kubectl", "get", "namespaces", "-o", "name").Output()
+	out, err := exec.Command(kubectlPath, "get", "namespaces", "-o", "name").Output()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -24,7 +30,7 @@ func NamespacesList() []string {
 }
 
 func PodsList() []*Pod {
-	out, err := exec.Command("kubectl", "get", "pods", "-o=custom-columns=NAME:.metadata.name,NAMESPACE:.metadata.namespace,PORT:.spec.containers[0].ports[0].containerPort", "--all-namespaces=true").Output()
+	out, err := exec.Command(kubectlPath, "get", "pods", "-o=custom-columns=NAME:.metadata.name,NAMESPACE:.metadata.namespace,PORT:.spec.containers[0].ports[0].containerPort", "--all-namespaces=true").Output()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -42,7 +48,7 @@ func PodsList() []*Pod {
 }
 
 func PortForward(podId string, localPort int, remotePort int, namespace string) {
-	cmd := exec.Command("kubectl", "port-forward", podId, fmt.Sprintf("%v:%v", localPort, remotePort), "--namespace", namespace)
+	cmd := exec.Command(kubectlPath, "port-forward", podId, fmt.Sprintf("%v:%v", localPort, remotePort), "--namespace", namespace)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	err := cmd.Run()

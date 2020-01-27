@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"strconv"
@@ -17,14 +18,14 @@ func initializationCheck() {
 }
 
 func readProxyType() string {
-	proxy_type := ""
+	proxyType := ""
 	prompt := &survey.Select{
 		Message: "Choose proxy type:",
 		// TODO Refactor types to Enums
 		Options: []string{"CloudSQL", "VM", "POD"},
 	}
-	survey.AskOne(prompt, &proxy_type)
-	return proxy_type
+	survey.AskOne(prompt, &proxyType)
+	return proxyType
 }
 
 // 💡 Spinner!
@@ -39,24 +40,24 @@ func loadingStop() {
 	loading.Suffix = ""
 }
 
-func readProjectId() string {
+func readProjectID() string {
 	loadingStart("Loading GCP Projects")
 	projects := gcloud.ProjectsList()
 	loadingStop()
-	project_id := ""
+	projectID := ""
 	prompt := &survey.Select{
 		Message: "Choose project:",
 		Options: projects,
 	}
-	survey.AskOne(prompt, &project_id)
-	return project_id
+	survey.AskOne(prompt, &projectID)
+	return projectID
 }
 
-func readCluster(projectId string) *gcloud.Cluster {
+func readCluster(projectID string) *gcloud.Cluster {
 	loadingStart("Loading Clusters")
-	clusters := gcloud.ContainerClustersList(projectId)
+	clusters := gcloud.ContainerClustersList(projectID)
 	loadingStop()
-	cluster_name := ""
+	clusterName := ""
 	clusterNames := make([]string, 0, len(clusters))
 	for _, cluster := range clusters {
 		clusterNames = append(clusterNames, cluster.Name)
@@ -65,10 +66,10 @@ func readCluster(projectId string) *gcloud.Cluster {
 		Message: "Choose cluster:",
 		Options: clusterNames,
 	}
-	survey.AskOne(prompt, &cluster_name)
+	survey.AskOne(prompt, &clusterName)
 	var clusterByName *gcloud.Cluster
 	for _, cluster := range clusters {
-		if cluster.Name == cluster_name {
+		if cluster.Name == clusterName {
 			clusterByName = cluster
 		}
 	}
@@ -140,13 +141,22 @@ func readRemotePort() int {
 	return n
 }
 
+func readArguments() {
+	gcloudPath := flag.String("gcloud_path", "gcloud", "gcloud binary path")
+	kubectlPath := flag.String("kubectl_path", "kubectl", "kubectl binary path")
+	flag.Parse()
+	gcloud.SetGcloudPath(*gcloudPath)
+	kubectl.SetKubectlPath(*kubectlPath)
+}
+
 func main() {
-	project_id := readProjectId()
-	proxy_type := readProxyType()
-	cluster := readCluster(project_id)
-	if proxy_type == "POD" {
+	readArguments()
+	projectID := readProjectID()
+	proxyType := readProxyType()
+	cluster := readCluster(projectID)
+	if proxyType == "POD" {
 		loadingStart("Loading Cluster credentials")
-		gcloud.GetClusterCredentials(project_id, cluster)
+		gcloud.GetClusterCredentials(projectID, cluster)
 		loadingStop()
 		pod := readPod()
 		// Remove completely? If we can read the port from Pod, makes no sense for the user to edit this
