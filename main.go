@@ -22,7 +22,7 @@ func readProxyType() string {
 	prompt := &survey.Select{
 		Message: "Choose proxy type:",
 		// TODO Refactor types to Enums
-		Options: []string{"CloudSQL", "VM", "POD"},
+		Options: []string{"VM", "POD"},
 	}
 	survey.AskOne(prompt, &proxyType)
 	return proxyType
@@ -171,7 +171,7 @@ func main() {
 	// fmt.Println(cluster)
 	// fmt.Println(namespace)
 
-	// 	Pod and VM should be fairly easy. CloudSQL probably won't have any SDK support
+	// 	Pod and VM should be fairly easy.
 	//	and user would must have it installed. Goproxie would then call the installed binary.
 	// For PROXYTYPE=Pod
 	//	TODO: Fetch Clusters for the selected GCPPROJECT
@@ -190,7 +190,5 @@ func main() {
 	//	TODO (LOW): Prefill by the logic above. Remote service almost always uses the default port.
 	//	TODO: Create a kubectl port-forward for the given GCPPROJECT, CLUSTER, POD and ports.
 	// For PROXYTYPE=VM
-	//	TODO: Complete this guide.
-	// For PROXYTYPE=CloudSQL
 	//	TODO: Complete this guide.
 }
