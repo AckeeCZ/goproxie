@@ -113,11 +113,11 @@ func readPod() *kubectl.Pod {
 	return pickedPod
 }
 
-func readLocalPort() int {
+func readLocalPort(defaultPort int) int {
 	port := "3000"
-	// TODO Preference
 	prompt := &survey.Input{
 		Message: "Choose local port:",
+		Default: strconv.Itoa(defaultPort),
 	}
 	survey.AskOne(prompt, &port)
 	n, err := strconv.Atoi(port)
@@ -127,11 +127,15 @@ func readLocalPort() int {
 	return n
 }
 
-func readRemotePort() int {
-	// TODO Base on remote resource port
+func readRemotePort(containerPorts []int) int {
 	port := "3000"
-	prompt := &survey.Input{
-		Message: "Choose local port:",
+	remotePortOptions := make([]string, 0, len(containerPorts))
+	for _, port := range containerPorts {
+		remotePortOptions = append(remotePortOptions, strconv.Itoa(port))
+	}
+	prompt := &survey.Select{
+		Message: "Choose remote port:",
+		Options: remotePortOptions,
 	}
 	survey.AskOne(prompt, &port)
 	n, err := strconv.Atoi(port)
@@ -159,11 +163,9 @@ func main() {
 		gcloud.GetClusterCredentials(projectID, cluster)
 		loadingStop()
 		pod := readPod()
-		// Remove completely? If we can read the port from Pod, makes no sense for the user to edit this
-		// remotePort := readRemotePort()
-		// TODO Base localport choice on remote port. Remote port is usually common port the the app type
-		localPort := readLocalPort()
-		kubectl.PortForward(pod.Name, localPort, pod.ContainerPort, pod.Namespace)
+		remotePort := readRemotePort(pod.ContainerPorts)
+		localPort := readLocalPort(remotePort)
+		kubectl.PortForward(pod.Name, localPort, remotePort, pod.Namespace)
 	}
 
 	// fmt.Println(project_id)
