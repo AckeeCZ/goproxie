@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	"ackee.cz/goproxie/internal/gcloud"
@@ -19,12 +20,21 @@ func initializationCheck() {
 
 func readProxyType() string {
 	proxyType := ""
-	prompt := &survey.Select{
-		Message: "Choose proxy type:",
-		// TODO Refactor types to Enums
-		Options: []string{"VM", "POD"},
+	proxyTypes := []string{"VM", "POD"}
+	if *flags.proxyType != "" {
+		filtered := filterStrings(proxyTypes, *flags.proxyType)
+		if len(filtered) > 0 {
+			proxyType = filtered[0]
+			fmt.Printf("Choose proxy type: %v\n", proxyType)
+		}
+	} else {
+		prompt := &survey.Select{
+			Message: "Choose proxy type:",
+			// TODO Refactor types to Enums
+			Options: proxyTypes,
+		}
+		survey.AskOne(prompt, &proxyType)
 	}
-	survey.AskOne(prompt, &proxyType)
 	return proxyType
 }
 
@@ -40,16 +50,35 @@ func loadingStop() {
 	loading.Suffix = ""
 }
 
+type Flags struct {
+	project   *string
+	proxyType *string
+	cluster   *string
+	pod       *string
+	localPort *string
+}
+
+var flags = &Flags{}
+
 func readProjectID() string {
 	loadingStart("Loading GCP Projects")
 	projects := gcloud.ProjectsList()
 	loadingStop()
 	projectID := ""
-	prompt := &survey.Select{
-		Message: "Choose project:",
-		Options: projects,
+	if *flags.project != "" {
+		filtered := filterStrings(projects, *flags.project)
+		if len(filtered) > 0 {
+			projectID = filtered[0]
+			fmt.Printf("Choose project: %v\n", projectID)
+		}
+	} else {
+		prompt := &survey.Select{
+			Message: "Choose project:",
+			Options: projects,
+		}
+		survey.AskOne(prompt, &projectID)
 	}
-	survey.AskOne(prompt, &projectID)
+
 	return projectID
 }
 
@@ -62,11 +91,19 @@ func readCluster(projectID string) *gcloud.Cluster {
 	for _, cluster := range clusters {
 		clusterNames = append(clusterNames, cluster.Name)
 	}
-	prompt := &survey.Select{
-		Message: "Choose cluster:",
-		Options: clusterNames,
+	if *flags.cluster != "" {
+		filtered := filterStrings(clusterNames, *flags.cluster)
+		if len(filtered) > 0 {
+			clusterName = filtered[0]
+			fmt.Printf("Choose cluster: %v\n", clusterName)
+		}
+	} else {
+		prompt := &survey.Select{
+			Message: "Choose cluster:",
+			Options: clusterNames,
+		}
+		survey.AskOne(prompt, &clusterName)
 	}
-	survey.AskOne(prompt, &clusterName)
 	var clusterByName *gcloud.Cluster
 	for _, cluster := range clusters {
 		if cluster.Name == clusterName {
@@ -74,6 +111,23 @@ func readCluster(projectID string) *gcloud.Cluster {
 		}
 	}
 	return clusterByName
+}
+
+func filterStrings(options []string, filter string) []string {
+	if len(filter) == 0 {
+		return options
+	}
+	results := []string{}
+
+	// Inspired by Survey's filtering
+	// https://github.com/AlecAivazis/survey/blob/59f4d6f95795f2e6b20526769ca4662ced786ccc/survey.go#L50
+	filter = strings.ToLower(filter)
+	for _, option := range options {
+		if strings.Contains(strings.ToLower(option), filter) {
+			results = append(results, option)
+		}
+	}
+	return results
 }
 
 // Deprecated: Some reason
@@ -99,11 +153,19 @@ func readPod() *kubectl.Pod {
 	for _, pod := range pods {
 		podOptions = append(podOptions, pod.Name)
 	}
-	prompt := &survey.Select{
-		Message: "Choose pod:",
-		Options: podOptions,
+	if *flags.pod != "" {
+		filtered := filterStrings(podOptions, *flags.pod)
+		if len(filtered) > 0 {
+			podName = filtered[0]
+			fmt.Printf("Choose pod: %v\n", podName)
+		}
+	} else {
+		prompt := &survey.Select{
+			Message: "Choose pod:",
+			Options: podOptions,
+		}
+		survey.AskOne(prompt, &podName)
 	}
-	survey.AskOne(prompt, &podName)
 	var pickedPod *kubectl.Pod
 	for _, pod := range pods {
 		if pod.Name == podName {
@@ -115,11 +177,16 @@ func readPod() *kubectl.Pod {
 
 func readLocalPort(defaultPort int) int {
 	port := "3000"
-	prompt := &survey.Input{
-		Message: "Choose local port:",
-		Default: strconv.Itoa(defaultPort),
+	if *flags.localPort != "" {
+		port = *flags.localPort
+		fmt.Printf("Choose local port: %v\n", port)
+	} else {
+		prompt := &survey.Input{
+			Message: "Choose local port:",
+			Default: strconv.Itoa(defaultPort),
+		}
+		survey.AskOne(prompt, &port)
 	}
-	survey.AskOne(prompt, &port)
 	n, err := strconv.Atoi(port)
 	if err != nil {
 		log.Fatal(err)
@@ -148,6 +215,11 @@ func readRemotePort(containerPorts []int) int {
 func readArguments() {
 	gcloudPath := flag.String("gcloud_path", "gcloud", "gcloud binary path")
 	kubectlPath := flag.String("kubectl_path", "kubectl", "kubectl binary path")
+	flags.project = flag.String("project", "", "Auto GCP Project pick")
+	flags.proxyType = flag.String("proxy_type", "", "Auto Proxy type pick")
+	flags.cluster = flag.String("cluster", "", "Auto Cluster pick")
+	flags.pod = flag.String("pod", "", "Auto Pod pick")
+	flags.localPort = flag.String("local_port", "", "Auto Local port pick")
 	flag.Parse()
 	gcloud.SetGcloudPath(*gcloudPath)
 	kubectl.SetKubectlPath(*kubectlPath)
