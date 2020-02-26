@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"ackee.cz/goproxie/internal/gcloud"
-	"ackee.cz/goproxie/internal/kubectl"
+	"github.com/AckeeCZ/goproxie/internal/gcloud"
+	"github.com/AckeeCZ/goproxie/internal/kubectl"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/briandowns/spinner"
 )
