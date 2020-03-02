@@ -1,4 +1,4 @@
-module ackee.cz/goproxie
+module github.com/AckeeCZ/goproxie
 
 go 1.13
 
