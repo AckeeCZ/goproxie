@@ -17,21 +17,21 @@ func SetKubectlPath(path string) {
 
 type Pod struct {
 	Name           string
-	Namespace      string
 	Containers     []string
 	ContainerPorts []int
 }
 
 func NamespacesList() []string {
-	out, err := exec.Command(kubectlPath, "get", "namespaces", "-o", "name").Output()
+	out, err := exec.Command(kubectlPath, "get", "namespaces", "-o=custom-columns=NAME:.metadata.name", "--no-headers").Output()
 	if err != nil {
 		log.Fatal(err)
 	}
 	return strings.Fields(string(out))
 }
 
-func PodsList() []*Pod {
-	out, err := exec.Command(kubectlPath, "get", "pods", "-o=custom-columns=NAME:.metadata.name,NAMESPACE:.metadata.namespace,CONTAINERS:spec.containers[*].name,PORTS:.spec.containers[*].ports[*].containerPort", "--all-namespaces=true").Output()
+func PodsList(namespace string) []*Pod {
+	out, err := exec.Command(kubectlPath, "get", "pods", "--namespace", namespace,
+		"-o=custom-columns=NAME:.metadata.name,CONTAINERS:spec.containers[*].name,PORTS:.spec.containers[*].ports[*].containerPort").Output()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -42,14 +42,14 @@ func PodsList() []*Pod {
 		if len(tokens) < 3 {
 			continue
 		}
-		containers := strings.Split(tokens[2], ",")
-		portsStr := strings.Split(tokens[3], ",")
+		containers := strings.Split(tokens[1], ",")
+		portsStr := strings.Split(tokens[2], ",")
 		ports := make([]int, 0, len(portsStr))
 		for _, portStr := range portsStr {
 			port, _ := strconv.Atoi(portStr)
 			ports = append(ports, port)
 		}
-		pods = append(pods, &Pod{Name: tokens[0], Namespace: tokens[1], Containers: containers, ContainerPorts: ports})
+		pods = append(pods, &Pod{Name: tokens[0], Containers: containers, ContainerPorts: ports})
 	}
 	return pods
 }

@@ -130,7 +130,6 @@ func filterStrings(options []string, filter string) []string {
 	return results
 }
 
-// Deprecated: Some reason
 func readNamespace() string {
 	loadingStart("Loading K8S Namespaces")
 	namespaces := kubectl.NamespacesList()
@@ -144,9 +143,9 @@ func readNamespace() string {
 	return namespace
 }
 
-func readPod() *kubectl.Pod {
+func readPod(namespace string) *kubectl.Pod {
 	loadingStart("Loading Pods")
-	pods := kubectl.PodsList()
+	pods := kubectl.PodsList(namespace)
 	loadingStop()
 	var podName string
 	podOptions := make([]string, 0, len(pods))
@@ -234,10 +233,11 @@ func main() {
 		loadingStart("Loading Cluster credentials")
 		gcloud.GetClusterCredentials(projectID, cluster)
 		loadingStop()
-		pod := readPod()
+		namespace := readNamespace()
+		pod := readPod(namespace)
 		remotePort := readRemotePort(pod.ContainerPorts)
 		localPort := readLocalPort(remotePort)
-		kubectl.PortForward(pod.Name, localPort, remotePort, pod.Namespace)
+		kubectl.PortForward(pod.Name, localPort, remotePort, namespace)
 	}
 
 	// fmt.Println(project_id)
