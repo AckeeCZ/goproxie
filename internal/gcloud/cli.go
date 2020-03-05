@@ -2,7 +2,6 @@ package gcloud
 
 import (
 	"log"
-	"os"
 	"os/exec"
 	"strings"
 )
