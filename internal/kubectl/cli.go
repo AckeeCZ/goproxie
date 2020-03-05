@@ -30,7 +30,7 @@ func NamespacesList() []string {
 }
 
 func PodsList(namespace string) []*Pod {
-	out, err := exec.Command(kubectlPath, "get", "pods", "--namespace", namespace,
+	out, err := exec.Command(kubectlPath, "get", "pods", "--namespace", namespace, "--no-headers",
 		"-o=custom-columns=NAME:.metadata.name,CONTAINERS:spec.containers[*].name,PORTS:.spec.containers[*].ports[*].containerPort").Output()
 	if err != nil {
 		log.Fatal(err)
