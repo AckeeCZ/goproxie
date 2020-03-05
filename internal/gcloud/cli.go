@@ -45,8 +45,11 @@ func ContainerClustersList(projectId string) []*Cluster {
 
 func GetClusterCredentials(projectID string, cluster *Cluster) {
 	cmd := exec.Command(gcloudPath, "container", "clusters", "get-credentials", cluster.Name, "--project", projectID, "--zone", cluster.Location)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	// TODO: Pipe only when debug is opted in
+	// Wanted to keep stderr, buck gcloud logs debug message to error out
+	// see https://github.com/AckeeCZ/goproxie/issues/3
+	// cmd.Stdout = os.Stdout
+	// cmd.Stderr = os.Stderr
 	err := cmd.Run()
 	if err != nil {
 		log.Fatal(err)
