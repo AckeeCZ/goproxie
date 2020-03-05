@@ -1,9 +1,9 @@
 package gcloud
 
 import (
-	"log"
-	"os/exec"
 	"strings"
+
+	"github.com/AckeeCZ/goproxie/internal/util"
 )
 
 var gcloudPath = "gcloud"
@@ -13,11 +13,7 @@ func SetGcloudPath(path string) {
 }
 
 func ProjectsList() []string {
-	out, err := exec.Command(gcloudPath, "projects", "list", "--format", "value(projectId)").Output()
-	if err != nil {
-		log.Fatal(err)
-	}
-	return strings.Fields(string(out))
+	return strings.Fields(util.RunCommand(gcloudPath, "projects", "list", "--format", "value(projectId)"))
 }
 
 type Cluster struct {
@@ -26,11 +22,8 @@ type Cluster struct {
 }
 
 func ContainerClustersList(projectId string) []*Cluster {
-	out, err := exec.Command(gcloudPath, "container", "clusters", "list", "--format", "value(name, location)", "--project", projectId).Output()
-	if err != nil {
-		log.Fatal(err)
-	}
-	lines := strings.Split(string(out), "\n")
+	out := util.RunCommand(gcloudPath, "container", "clusters", "list", "--format", "value(name, location)", "--project", projectId)
+	lines := strings.Split(out, "\n")
 	clusters := []*Cluster{}
 	for _, line := range lines {
 		split := strings.Fields(line)
@@ -43,14 +36,5 @@ func ContainerClustersList(projectId string) []*Cluster {
 }
 
 func GetClusterCredentials(projectID string, cluster *Cluster) {
-	cmd := exec.Command(gcloudPath, "container", "clusters", "get-credentials", cluster.Name, "--project", projectID, "--zone", cluster.Location)
-	// TODO: Pipe only when debug is opted in
-	// Wanted to keep stderr, buck gcloud logs debug message to error out
-	// see https://github.com/AckeeCZ/goproxie/issues/3
-	// cmd.Stdout = os.Stdout
-	// cmd.Stderr = os.Stderr
-	err := cmd.Run()
-	if err != nil {
-		log.Fatal(err)
-	}
+	util.RunSilentCommand(gcloudPath, "container", "clusters", "get-credentials", cluster.Name, "--project", projectID, "--zone", cluster.Location)
 }

@@ -7,6 +7,8 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+
+	"github.com/AckeeCZ/goproxie/internal/util"
 )
 
 var kubectlPath = "kubectl"
@@ -22,20 +24,13 @@ type Pod struct {
 }
 
 func NamespacesList() []string {
-	out, err := exec.Command(kubectlPath, "get", "namespaces", "-o=custom-columns=NAME:.metadata.name", "--no-headers").Output()
-	if err != nil {
-		log.Fatal(err)
-	}
-	return strings.Fields(string(out))
+	return strings.Fields(util.RunCommand(kubectlPath, "get", "namespaces", "-o=custom-columns=NAME:.metadata.name", "--no-headers"))
 }
 
 func PodsList(namespace string) []*Pod {
-	out, err := exec.Command(kubectlPath, "get", "pods", "--namespace", namespace,
-		"-o=custom-columns=NAME:.metadata.name,CONTAINERS:spec.containers[*].name,PORTS:.spec.containers[*].ports[*].containerPort").Output()
-	if err != nil {
-		log.Fatal(err)
-	}
-	lines := strings.Split(string(out), "\n")
+	out := util.RunCommand(kubectlPath, "get", "pods", "--namespace", namespace, "--no-headers",
+		"-o=custom-columns=NAME:.metadata.name,CONTAINERS:spec.containers[*].name,PORTS:.spec.containers[*].ports[*].containerPort")
+	lines := strings.Split(out, "\n")
 	pods := []*Pod{}
 	for _, line := range lines {
 		tokens := strings.Fields(line)
