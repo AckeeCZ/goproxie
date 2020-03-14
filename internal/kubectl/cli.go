@@ -13,6 +13,8 @@ import (
 
 var kubectlPath = "kubectl"
 
+var runCommand = util.RunCommand
+
 func SetKubectlPath(path string) {
 	kubectlPath = path
 }
@@ -24,11 +26,11 @@ type Pod struct {
 }
 
 func NamespacesList() []string {
-	return strings.Fields(util.RunCommand(kubectlPath, "get", "namespaces", "-o=custom-columns=NAME:.metadata.name", "--no-headers"))
+	return strings.Fields(runCommand(kubectlPath, "get", "namespaces", "-o=custom-columns=NAME:.metadata.name", "--no-headers"))
 }
 
 func PodsList(namespace string) []*Pod {
-	out := util.RunCommand(kubectlPath, "get", "pods", "--namespace", namespace, "--no-headers",
+	out := runCommand(kubectlPath, "get", "pods", "--namespace", namespace, "--no-headers",
 		"-o=custom-columns=NAME:.metadata.name,CONTAINERS:spec.containers[*].name,PORTS:.spec.containers[*].ports[*].containerPort")
 	lines := strings.Split(out, "\n")
 	pods := []*Pod{}
