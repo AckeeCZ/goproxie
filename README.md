@@ -10,3 +10,15 @@
 go get -u github.com/AckeeCZ/goproxie
 ```
 This will download the source and compile the executable `$GOPATH/bin/goproxie`. Make sure `$GOPATH/bin` is in your `$PATH`.
+
+## Test
+
+Run all tests
+```sh
+go test ./...
+```
+
+See coverage
+```sh
+go test ./... -v -coverprofile=coverage.out && go tool cover -html=coverage.out
+```
