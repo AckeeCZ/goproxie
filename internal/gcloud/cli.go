@@ -8,12 +8,14 @@ import (
 
 var gcloudPath = "gcloud"
 
+var runCommand = util.RunCommand
+
 func SetGcloudPath(path string) {
 	gcloudPath = path
 }
 
 func ProjectsList() []string {
-	return strings.Fields(util.RunCommand(gcloudPath, "projects", "list", "--format", "value(projectId)"))
+	return strings.Fields(runCommand(gcloudPath, "projects", "list", "--format", "value(projectId)"))
 }
 
 type Cluster struct {
@@ -22,7 +24,7 @@ type Cluster struct {
 }
 
 func ContainerClustersList(projectId string) []*Cluster {
-	out := util.RunCommand(gcloudPath, "container", "clusters", "list", "--format", "value(name, location)", "--project", projectId)
+	out := runCommand(gcloudPath, "container", "clusters", "list", "--format", "value(name, location)", "--project", projectId)
 	lines := strings.Split(out, "\n")
 	clusters := []*Cluster{}
 	for _, line := range lines {
