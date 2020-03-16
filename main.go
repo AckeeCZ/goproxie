@@ -54,6 +54,7 @@ type Flags struct {
 	project   *string
 	proxyType *string
 	cluster   *string
+	namespace *string
 	pod       *string
 	localPort *string
 }
@@ -135,11 +136,19 @@ func readNamespace() string {
 	namespaces := kubectl.NamespacesList()
 	loadingStop()
 	namespace := ""
-	prompt := &survey.Select{
-		Message: "Choose namespace:",
-		Options: namespaces,
+	if *flags.namespace != "" {
+		filtered := filterStrings(namespaces, *flags.namespace)
+		if len(filtered) > 0 {
+			namespace = filtered[0]
+			fmt.Printf("Choose namespace: %v\n", namespace)
+		}
+	} else {
+		prompt := &survey.Select{
+			Message: "Choose namespace:",
+			Options: namespaces,
+		}
+		survey.AskOne(prompt, &namespace)
 	}
-	survey.AskOne(prompt, &namespace)
 	return namespace
 }
 
@@ -217,6 +226,7 @@ func readArguments() {
 	flags.project = flag.String("project", "", "Auto GCP Project pick")
 	flags.proxyType = flag.String("proxy_type", "", "Auto Proxy type pick")
 	flags.cluster = flag.String("cluster", "", "Auto Cluster pick")
+	flags.namespace = flag.String("namespace", "", "Auto Namespace pick")
 	flags.pod = flag.String("pod", "", "Auto Pod pick")
 	flags.localPort = flag.String("local_port", "", "Auto Local port pick")
 	flag.Parse()
