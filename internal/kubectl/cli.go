@@ -52,7 +52,7 @@ func PodsList(namespace string) []*Pod {
 }
 
 func PortForward(podId string, localPort int, remotePort int, namespace string) {
-	cmd := exec.Command(kubectlPath, "port-forward", podId, fmt.Sprintf("%v:%v", localPort, remotePort), "--namespace", namespace)
+	cmd := exec.Command(kubectlPath, "port-forward", podId, fmt.Sprintf("%v:%v", localPort, remotePort), "--namespace", namespace, "--address", "0.0.0.0")
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	err := cmd.Run()
