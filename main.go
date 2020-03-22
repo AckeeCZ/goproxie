@@ -60,6 +60,8 @@ type Flags struct {
 	namespace *string
 	pod       *string
 	localPort *string
+	/** Dont save to history */
+	noSave *bool
 }
 
 var flags = &Flags{}
@@ -232,6 +234,7 @@ func readArguments() {
 	flags.namespace = flag.String("namespace", "", "Auto Namespace pick")
 	flags.pod = flag.String("pod", "", "Auto Pod pick")
 	flags.localPort = flag.String("local_port", "", "Auto Local port pick")
+	flags.noSave = flag.Bool("no-save", false, "Don't save invocation to history")
 	flag.Parse()
 	gcloud.SetGcloudPath(*gcloudPath)
 	kubectl.SetKubectlPath(*kubectlPath)
@@ -255,6 +258,9 @@ func main() {
 		pod := readPod(namespace)
 		remotePort := readRemotePort(pod.ContainerPorts)
 		localPort := readLocalPort(remotePort)
+		if *flags.noSave == false {
+			history.StorePodProxy(projectID, cluster, namespace, pod, localPort, remotePort)
+		}
 		kubectl.PortForward(pod.Name, localPort, remotePort, namespace)
 	}
 
