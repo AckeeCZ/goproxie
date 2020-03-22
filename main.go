@@ -243,7 +243,7 @@ func readArguments() {
 func main() {
 	readArguments()
 	store.Initialize()
-	if os.Args[1] == "history" {
+	if len(os.Args) > 1 && os.Args[1] == "history" {
 		history.Browse()
 		return
 	}
