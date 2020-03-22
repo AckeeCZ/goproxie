@@ -4,12 +4,15 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/AckeeCZ/goproxie/internal/gcloud"
+	"github.com/AckeeCZ/goproxie/internal/history"
 	"github.com/AckeeCZ/goproxie/internal/kubectl"
+	"github.com/AckeeCZ/goproxie/internal/store"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/briandowns/spinner"
 )
@@ -236,6 +239,11 @@ func readArguments() {
 
 func main() {
 	readArguments()
+	store.Initialize()
+	if os.Args[1] == "history" {
+		history.Browse()
+		return
+	}
 	projectID := readProjectID()
 	proxyType := readProxyType()
 	cluster := readCluster(projectID)
