@@ -4,12 +4,15 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/AckeeCZ/goproxie/internal/gcloud"
+	"github.com/AckeeCZ/goproxie/internal/history"
 	"github.com/AckeeCZ/goproxie/internal/kubectl"
+	"github.com/AckeeCZ/goproxie/internal/store"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/briandowns/spinner"
 )
@@ -57,6 +60,8 @@ type Flags struct {
 	namespace *string
 	pod       *string
 	localPort *string
+	/** Dont save to history */
+	noSave *bool
 }
 
 var flags = &Flags{}
@@ -229,6 +234,7 @@ func readArguments() {
 	flags.namespace = flag.String("namespace", "", "Auto Namespace pick")
 	flags.pod = flag.String("pod", "", "Auto Pod pick")
 	flags.localPort = flag.String("local_port", "", "Auto Local port pick")
+	flags.noSave = flag.Bool("no-save", false, "Don't save invocation to history")
 	flag.Parse()
 	gcloud.SetGcloudPath(*gcloudPath)
 	kubectl.SetKubectlPath(*kubectlPath)
@@ -236,6 +242,11 @@ func readArguments() {
 
 func main() {
 	readArguments()
+	store.Initialize()
+	if len(os.Args) > 1 && os.Args[1] == "history" {
+		history.Browse()
+		return
+	}
 	projectID := readProjectID()
 	proxyType := readProxyType()
 	cluster := readCluster(projectID)
@@ -247,6 +258,9 @@ func main() {
 		pod := readPod(namespace)
 		remotePort := readRemotePort(pod.ContainerPorts)
 		localPort := readLocalPort(remotePort)
+		if *flags.noSave == false {
+			history.StorePodProxy(projectID, cluster, namespace, pod, localPort, remotePort)
+		}
 		kubectl.PortForward(pod.Name, localPort, remotePort, namespace)
 	}
 
