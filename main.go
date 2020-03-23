@@ -66,57 +66,79 @@ type Flags struct {
 
 var flags = &Flags{}
 
-func readProjectID() string {
-	loadingStart("Loading GCP Projects")
-	projects := gcloud.ProjectsList()
+type selectFieldOption struct {
+	title string
+	value interface{}
+}
+type selectField struct {
+	titleChoose  string
+	titleLoading string
+	valueTitle   string
+	getOptions   func() []selectFieldOption
+}
+
+func promptSelection(sel selectField) interface{} {
+	// Load options
+	loadingStart(fmt.Sprintf("Loading %v", sel.titleLoading))
+	options := sel.getOptions()
 	loadingStop()
-	projectID := ""
-	if *flags.project != "" {
-		filtered := filterStrings(projects, *flags.project)
+	// Serialize options to strings
+	optionTitles := []string{}
+	for _, option := range options {
+		optionTitles = append(optionTitles, option.title)
+	}
+	pickedTitle := ""
+	if sel.valueTitle != "" {
+		// Apply selection, if set
+		filtered := filterStrings(optionTitles, sel.valueTitle)
 		if len(filtered) > 0 {
-			projectID = filtered[0]
-			fmt.Printf("Choose project: %v\n", projectID)
+			pickedTitle = filtered[0]
+			fmt.Printf("%v: %v\n", sel.titleChoose, pickedTitle)
 		}
 	} else {
+		// Pick from Input otherwise
 		prompt := &survey.Select{
-			Message: "Choose project:",
-			Options: projects,
+			Message: fmt.Sprintf("Choose %v:", sel.titleChoose),
+			Options: optionTitles,
 		}
-		survey.AskOne(prompt, &projectID)
+		survey.AskOne(prompt, &pickedTitle)
 	}
+	var pickedOption selectFieldOption
+	// Reverse-search Option by picked title
+	for _, option := range options {
+		if option.title == pickedTitle {
+			pickedOption = option
+		}
+	}
+	return pickedOption.value
+}
 
-	return projectID
+func readProjectID() string {
+	return promptSelection(selectField{
+		titleLoading: "GCP Projects",
+		titleChoose:  "GCP Project",
+		getOptions: func() (options []selectFieldOption) {
+			for _, project := range gcloud.ProjectsList() {
+				options = append(options, selectFieldOption{title: project, value: project})
+			}
+			return
+		},
+		valueTitle: *flags.project,
+	}).(string)
 }
 
 func readCluster(projectID string) *gcloud.Cluster {
-	loadingStart("Loading Clusters")
-	clusters := gcloud.ContainerClustersList(projectID)
-	loadingStop()
-	clusterName := ""
-	clusterNames := make([]string, 0, len(clusters))
-	for _, cluster := range clusters {
-		clusterNames = append(clusterNames, cluster.Name)
-	}
-	if *flags.cluster != "" {
-		filtered := filterStrings(clusterNames, *flags.cluster)
-		if len(filtered) > 0 {
-			clusterName = filtered[0]
-			fmt.Printf("Choose cluster: %v\n", clusterName)
-		}
-	} else {
-		prompt := &survey.Select{
-			Message: "Choose cluster:",
-			Options: clusterNames,
-		}
-		survey.AskOne(prompt, &clusterName)
-	}
-	var clusterByName *gcloud.Cluster
-	for _, cluster := range clusters {
-		if cluster.Name == clusterName {
-			clusterByName = cluster
-		}
-	}
-	return clusterByName
+	return promptSelection(selectField{
+		titleLoading: "Clusters",
+		titleChoose:  "Cluster",
+		getOptions: func() (options []selectFieldOption) {
+			for _, cluster := range gcloud.ContainerClustersList(projectID) {
+				options = append(options, selectFieldOption{title: cluster.Name, value: cluster})
+			}
+			return
+		},
+		valueTitle: *flags.cluster,
+	}).(*gcloud.Cluster)
 }
 
 func filterStrings(options []string, filter string) []string {
@@ -137,55 +159,31 @@ func filterStrings(options []string, filter string) []string {
 }
 
 func readNamespace() string {
-	loadingStart("Loading K8S Namespaces")
-	namespaces := kubectl.NamespacesList()
-	loadingStop()
-	namespace := ""
-	if *flags.namespace != "" {
-		filtered := filterStrings(namespaces, *flags.namespace)
-		if len(filtered) > 0 {
-			namespace = filtered[0]
-			fmt.Printf("Choose namespace: %v\n", namespace)
-		}
-	} else {
-		prompt := &survey.Select{
-			Message: "Choose namespace:",
-			Options: namespaces,
-		}
-		survey.AskOne(prompt, &namespace)
-	}
-	return namespace
+	return promptSelection(selectField{
+		titleLoading: "K8S Namespaces",
+		titleChoose:  "K8S Namespace",
+		getOptions: func() (options []selectFieldOption) {
+			for _, namespace := range kubectl.NamespacesList() {
+				options = append(options, selectFieldOption{title: namespace, value: namespace})
+			}
+			return
+		},
+		valueTitle: *flags.namespace,
+	}).(string)
 }
 
 func readPod(namespace string) *kubectl.Pod {
-	loadingStart("Loading Pods")
-	pods := kubectl.PodsList(namespace)
-	loadingStop()
-	var podName string
-	podOptions := make([]string, 0, len(pods))
-	for _, pod := range pods {
-		podOptions = append(podOptions, pod.Name)
-	}
-	if *flags.pod != "" {
-		filtered := filterStrings(podOptions, *flags.pod)
-		if len(filtered) > 0 {
-			podName = filtered[0]
-			fmt.Printf("Choose pod: %v\n", podName)
-		}
-	} else {
-		prompt := &survey.Select{
-			Message: "Choose pod:",
-			Options: podOptions,
-		}
-		survey.AskOne(prompt, &podName)
-	}
-	var pickedPod *kubectl.Pod
-	for _, pod := range pods {
-		if pod.Name == podName {
-			pickedPod = pod
-		}
-	}
-	return pickedPod
+	return promptSelection(selectField{
+		titleLoading: "Pods",
+		titleChoose:  "Pod",
+		getOptions: func() (options []selectFieldOption) {
+			for _, pod := range kubectl.PodsList(namespace) {
+				options = append(options, selectFieldOption{title: pod.Name, value: pod})
+			}
+			return
+		},
+		valueTitle: *flags.pod,
+	}).(*kubectl.Pod)
 }
 
 func readLocalPort(defaultPort int) int {
@@ -208,21 +206,16 @@ func readLocalPort(defaultPort int) int {
 }
 
 func readRemotePort(containerPorts []int) int {
-	port := "3000"
-	remotePortOptions := make([]string, 0, len(containerPorts))
-	for _, port := range containerPorts {
-		remotePortOptions = append(remotePortOptions, strconv.Itoa(port))
-	}
-	prompt := &survey.Select{
-		Message: "Choose remote port:",
-		Options: remotePortOptions,
-	}
-	survey.AskOne(prompt, &port)
-	n, err := strconv.Atoi(port)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return n
+	return promptSelection(selectField{
+		titleLoading: "Remote ports",
+		titleChoose:  "Remote port",
+		getOptions: func() (options []selectFieldOption) {
+			for _, port := range containerPorts {
+				options = append(options, selectFieldOption{title: strconv.Itoa(port), value: port})
+			}
+			return
+		},
+	}).(int)
 }
 
 func readArguments() {
