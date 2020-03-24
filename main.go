@@ -54,12 +54,13 @@ func loadingStop() {
 }
 
 type Flags struct {
-	project   *string
-	proxyType *string
-	cluster   *string
-	namespace *string
-	pod       *string
-	localPort *string
+	project    *string
+	proxyType  *string
+	cluster    *string
+	namespace  *string
+	pod        *string
+	localPort  *string
+	remotePort *string
 	/** Dont save to history */
 	noSave *bool
 }
@@ -215,6 +216,7 @@ func readRemotePort(containerPorts []int) int {
 			}
 			return
 		},
+		valueTitle: *flags.remotePort,
 	}).(int)
 }
 
@@ -227,6 +229,7 @@ func readArguments() {
 	flags.namespace = flag.String("namespace", "", "Auto Namespace pick")
 	flags.pod = flag.String("pod", "", "Auto Pod pick")
 	flags.localPort = flag.String("local_port", "", "Auto Local port pick")
+	flags.remotePort = flag.String("remote_port", "", "Auto Remote port pick")
 	flags.noSave = flag.Bool("no-save", false, "Don't save invocation to history")
 	flag.Parse()
 	gcloud.SetGcloudPath(*gcloudPath)
