@@ -2,7 +2,6 @@ package store
 
 import (
 	"log"
-	"math"
 	"os"
 	"os/user"
 	"path"
@@ -60,6 +59,8 @@ func Append(key string, value interface{}) error {
 		currentValue = viper.Get(key).([]interface{})
 	}
 	currentValue = append(currentValue, value)
-	currentValue = currentValue[int(math.Max(float64(len(currentValue))-MaxAppendLength, 0)):]
+	if len(currentValue) > MaxAppendLength {
+		currentValue = currentValue[len(currentValue)-MaxAppendLength:]
+	}
 	return Set(key, currentValue)
 }
