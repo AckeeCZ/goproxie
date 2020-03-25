@@ -82,6 +82,11 @@ func promptSelection(sel selectField) interface{} {
 	loadingStart(fmt.Sprintf("Loading %v", sel.titleLoading))
 	options := sel.getOptions()
 	loadingStop()
+	// Shortcircuit selection if theres is only one option
+	if len(options) == 1 {
+		fmt.Printf("%v: %v\n", sel.titleChoose, options[0].title)
+		return options[0].value
+	}
 	// Serialize options to strings
 	optionTitles := []string{}
 	for _, option := range options {
