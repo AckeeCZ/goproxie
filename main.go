@@ -278,7 +278,15 @@ func main() {
 		gcloudGetClusterCredentials(projectID, cluster)
 		loadingStop()
 		namespace := readNamespace()
+		if namespace == "" {
+			fmt.Println("Could not find any GCP Clusters")
+			return
+		}
 		pod := readPod(namespace)
+		if pod == nil {
+			fmt.Printf("Could not find any K8S Pods in namespace %v", namespace)
+			return
+		}
 		remotePort := readRemotePort(pod.ContainerPorts)
 		localPort := readLocalPort(remotePort)
 		if *flags.noSave == false {
