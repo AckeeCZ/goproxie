@@ -17,11 +17,18 @@ import (
 	"github.com/briandowns/spinner"
 )
 
+var gcloudProjectsList = gcloud.ProjectsList
+var kubectlPodsList = kubectl.PodsList
+var gcloudContainerClustersList = gcloud.ContainerClustersList
+var gcloudGetClusterCredentials = gcloud.GetClusterCredentials
+var kubectlNamespacesList = kubectl.NamespacesList
+var kubectlPortForward = kubectl.PortForward
+
 func initializationCheck() {
 	// TODO
 }
 
-func readProxyType() string {
+var readProxyType = func() string {
 	proxyType := ""
 	proxyTypes := []string{"VM", "POD"}
 	if *flags.proxyType != "" {
@@ -119,32 +126,36 @@ func promptSelection(sel selectField) interface{} {
 	return pickedOption.value
 }
 
-func readProjectID() string {
-	return promptSelection(selectField{
+func readProjectID() (projectID string) {
+	// Cannot return directly, I have to accept both return values to avoid crash 🤷
+	// https://gist.github.com/smoliji/f72fe94b028125a22efa53a430ba007a
+	projectID, _ = promptSelection(selectField{
 		titleLoading: "GCP Projects",
 		titleChoose:  "GCP Project",
 		getOptions: func() (options []selectFieldOption) {
-			for _, project := range gcloud.ProjectsList() {
+			for _, project := range gcloudProjectsList() {
 				options = append(options, selectFieldOption{title: project, value: project})
 			}
 			return
 		},
 		valueTitle: *flags.project,
 	}).(string)
+	return
 }
 
-func readCluster(projectID string) *gcloud.Cluster {
-	return promptSelection(selectField{
+func readCluster(projectID string) (cluster *gcloud.Cluster) {
+	cluster, _ = promptSelection(selectField{
 		titleLoading: "Clusters",
 		titleChoose:  "Cluster",
 		getOptions: func() (options []selectFieldOption) {
-			for _, cluster := range gcloud.ContainerClustersList(projectID) {
+			for _, cluster := range gcloudContainerClustersList(projectID) {
 				options = append(options, selectFieldOption{title: cluster.Name, value: cluster})
 			}
 			return
 		},
 		valueTitle: *flags.cluster,
 	}).(*gcloud.Cluster)
+	return
 }
 
 func filterStrings(options []string, filter string) []string {
@@ -164,32 +175,34 @@ func filterStrings(options []string, filter string) []string {
 	return results
 }
 
-func readNamespace() string {
-	return promptSelection(selectField{
+func readNamespace() (namespace string) {
+	namespace, _ = promptSelection(selectField{
 		titleLoading: "K8S Namespaces",
 		titleChoose:  "K8S Namespace",
 		getOptions: func() (options []selectFieldOption) {
-			for _, namespace := range kubectl.NamespacesList() {
+			for _, namespace := range kubectlNamespacesList() {
 				options = append(options, selectFieldOption{title: namespace, value: namespace})
 			}
 			return
 		},
 		valueTitle: *flags.namespace,
 	}).(string)
+	return
 }
 
-func readPod(namespace string) *kubectl.Pod {
-	return promptSelection(selectField{
+func readPod(namespace string) (pod *kubectl.Pod) {
+	pod, _ = promptSelection(selectField{
 		titleLoading: "Pods",
 		titleChoose:  "Pod",
 		getOptions: func() (options []selectFieldOption) {
-			for _, pod := range kubectl.PodsList(namespace) {
+			for _, pod := range kubectlPodsList(namespace) {
 				options = append(options, selectFieldOption{title: pod.Name, value: pod})
 			}
 			return
 		},
 		valueTitle: *flags.pod,
 	}).(*kubectl.Pod)
+	return
 }
 
 func readLocalPort(defaultPort int) int {
@@ -211,8 +224,8 @@ func readLocalPort(defaultPort int) int {
 	return n
 }
 
-func readRemotePort(containerPorts []int) int {
-	return promptSelection(selectField{
+func readRemotePort(containerPorts []int) (port int) {
+	port, _ = promptSelection(selectField{
 		titleLoading: "Remote ports",
 		titleChoose:  "Remote port",
 		getOptions: func() (options []selectFieldOption) {
@@ -223,6 +236,7 @@ func readRemotePort(containerPorts []int) int {
 		},
 		valueTitle: *flags.remotePort,
 	}).(int)
+	return
 }
 
 func readArguments() {
@@ -249,20 +263,36 @@ func main() {
 		return
 	}
 	projectID := readProjectID()
+	if projectID == "" {
+		fmt.Println("Could not find any GCP Projects")
+		return
+	}
 	proxyType := readProxyType()
 	cluster := readCluster(projectID)
+	if cluster == nil {
+		fmt.Println("Could not find any GCP Clusters")
+		return
+	}
 	if proxyType == "POD" {
 		loadingStart("Loading Cluster credentials")
-		gcloud.GetClusterCredentials(projectID, cluster)
+		gcloudGetClusterCredentials(projectID, cluster)
 		loadingStop()
 		namespace := readNamespace()
+		if namespace == "" {
+			fmt.Println("Could not find any GCP Clusters")
+			return
+		}
 		pod := readPod(namespace)
+		if pod == nil {
+			fmt.Printf("Could not find any K8S Pods in namespace %v", namespace)
+			return
+		}
 		remotePort := readRemotePort(pod.ContainerPorts)
 		localPort := readLocalPort(remotePort)
 		if *flags.noSave == false {
 			history.StorePodProxy(projectID, cluster, namespace, pod, localPort, remotePort)
 		}
-		kubectl.PortForward(pod.Name, localPort, remotePort, namespace)
+		kubectlPortForward(pod.Name, localPort, remotePort, namespace)
 	}
 
 	// fmt.Println(project_id)
