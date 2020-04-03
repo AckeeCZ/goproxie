@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.com/AckeeCZ/goproxie.svg?branch=master)](https://travis-ci.com/AckeeCZ/goproxie)
 [![Coverage Status](https://coveralls.io/repos/github/AckeeCZ/goproxie/badge.svg?branch=master)](https://coveralls.io/github/AckeeCZ/goproxie?branch=master)
+[![Go Report](https://goreportcard.com/badge/github.com/AckeeCZ/goproxie)](https://goreportcard.com/badge/github.com/AckeeCZ/goproxie)
+
 
 [Go](https://golang.org/) clone of [proxie cli](https://github.com/AckeeCZ/be-scripts#proxie) for Node.js.
 
