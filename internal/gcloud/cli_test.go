@@ -23,6 +23,7 @@ func mockRunCommand(mockResponse string) func() {
 }
 
 func TestProjectsList(t *testing.T) {
+	t.Errorf("Fail test")
 	unmock := mockRunCommand(mockProjectsList)
 	defer unmock()
 	result := ProjectsList()
