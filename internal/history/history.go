@@ -15,14 +15,9 @@ import (
 
 const KeyCommands = "history.commands"
 
-func extractPodBaseName(pod *kubectl.Pod) string {
-	// TODO
-	return pod.Name
-}
-
 func StorePodProxy(projectId string, cluster *gcloud.Cluster, namespace string, pod *kubectl.Pod, localPort int, remotePort int) {
 
-	record := fmt.Sprintf("-project=%v -cluster=%v -namespace=%v -pod=%v -local_port=%v -proxy_type=pod", projectId, cluster.Name, namespace, extractPodBaseName(pod), localPort)
+	record := fmt.Sprintf("-project=%v -cluster=%v -namespace=%v -pod=%v -local_port=%v -proxy_type=pod", projectId, cluster.Name, namespace, pod.AppLabel, localPort)
 	store.Append(KeyCommands, record)
 }
 
