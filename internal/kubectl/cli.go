@@ -23,6 +23,7 @@ type Pod struct {
 	Name           string
 	Containers     []string
 	ContainerPorts []int
+	AppLabel       string
 }
 
 func NamespacesList() []string {
@@ -31,7 +32,7 @@ func NamespacesList() []string {
 
 func PodsList(namespace string) []*Pod {
 	out := runCommand(kubectlPath, "get", "pods", "--namespace", namespace, "--no-headers",
-		"-o=custom-columns=NAME:.metadata.name,CONTAINERS:spec.containers[*].name,PORTS:.spec.containers[*].ports[*].containerPort")
+		"-o=custom-columns=NAME:.metadata.name,CONTAINERS:spec.containers[*].name,PORTS:.spec.containers[*].ports[*].containerPort,LABELS=:.metadata.labels.app")
 	lines := strings.Split(out, "\n")
 	pods := []*Pod{}
 	for _, line := range lines {
@@ -46,7 +47,7 @@ func PodsList(namespace string) []*Pod {
 			port, _ := strconv.Atoi(portStr)
 			ports = append(ports, port)
 		}
-		pods = append(pods, &Pod{Name: tokens[0], Containers: containers, ContainerPorts: ports})
+		pods = append(pods, &Pod{Name: tokens[0], Containers: containers, ContainerPorts: ports, AppLabel: tokens[3]})
 	}
 	return pods
 }

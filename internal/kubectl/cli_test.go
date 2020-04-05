@@ -5,9 +5,9 @@ import "testing"
 // Exact command results
 
 // Should contain <none> ports and multi-ports
-var mockPodsList = `acme-rockets-v0.3.0-74bf544f8b-lzc5b                      event-exporter,prometheus-to-sd-exporter      <none>
-metrics-server-v0.3.3-6d96fcc55-2qtm8                       metrics-server,metrics-server-nanny           443
-traefik-ig-7646cb565d-9zxv6                                 traefik                                       80,443,8080,8081
+var mockPodsList = `acme-rockets-v0.3.0-74bf544f8b-lzc5b                      event-exporter,prometheus-to-sd-exporter      <none>           acme-rockets
+metrics-server-v0.3.3-6d96fcc55-2qtm8                       metrics-server,metrics-server-nanny           443           metrics-server
+traefik-ig-7646cb565d-9zxv6                                 traefik                                       80,443,8080,8081           traefik-ig
 `
 var mockNamespacesList = `acme-sro-development
 default
@@ -56,6 +56,7 @@ func TestPodsList(t *testing.T) {
 				"event-exporter",
 				"prometheus-to-sd-exporter",
 			},
+			AppLabel: "acme-rockets",
 		},
 		&Pod{
 			Name:           "metrics-server-v0.3.3-6d96fcc55-2qtm8",
@@ -64,6 +65,7 @@ func TestPodsList(t *testing.T) {
 				"metrics-server",
 				"metrics-server-nanny",
 			},
+			AppLabel: "metrics-server",
 		},
 		&Pod{
 			Name:           "traefik-ig-7646cb565d-9zxv6",
@@ -71,11 +73,15 @@ func TestPodsList(t *testing.T) {
 			Containers: []string{
 				"traefik",
 			},
+			AppLabel: "traefik-ig",
 		},
 	}
 	for i, expectedItem := range expectedItems {
 		resultItem := result[i]
 		if expectedItem.Name != resultItem.Name {
+			t.Errorf("Expected `%v` does not match result `%v`", expectedItem, resultItem)
+		}
+		if expectedItem.AppLabel != resultItem.AppLabel {
 			t.Errorf("Expected `%v` does not match result `%v`", expectedItem, resultItem)
 		}
 		for i, expectedPort := range expectedItem.ContainerPorts {
