@@ -8,3 +8,22 @@ before_install:
 
 script:
   - $GOPATH/bin/goveralls -service=travis-ci
+
+before_deploy:
+  - GOOS=linux go build -o=goproxie-linux
+  - GOOS=darwin go build -o=goproxie-mac
+  - GOOS=windows go build -o=goproxie-win
+
+deploy:
+  provider: releases
+  api_key: "GITHUB OAUTH TOKEN"
+  file: 
+    - goproxie-win
+    - goproxie-mac
+    - goproxie-linux
+  # skip_cleanup: true
+  overwrite: true
+  # TODO Uncomment when deploys are stable
+  draft: true
+  # on:
+  #   tags: true
