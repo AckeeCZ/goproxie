@@ -21,9 +21,12 @@ deploy:
     - goproxie-win
     - goproxie-mac
     - goproxie-linux
+  on:
+    # TODO Remove when tested
+    branch: feat/travis-deploy
+    # TODO Uncomment when tested
+    # tags: true
   # skip_cleanup: true
   overwrite: true
   # TODO Uncomment when deploys are stable
   draft: true
-  # on:
-  #   tags: true
