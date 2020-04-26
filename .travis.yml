@@ -27,7 +27,7 @@ deploy:
     branch: feat/travis-deploy
     # TODO Uncomment when tested
     # tags: true
-  # skip_cleanup: true
+  skip_cleanup: true
   overwrite: true
   # TODO Uncomment when deploys are stable
   draft: true
