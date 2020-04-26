@@ -12,14 +12,14 @@ script:
 before_deploy:
   - GOOS=linux go build -o=goproxie && zip goproxie-linux goproxie && rm goproxie
   - GOOS=darwin go build -o=goproxie && zip goproxie-mac goproxie && rm goproxie
-  - GOOS=windows go build -o=goproxie-win.exe
+  - GOOS=windows go build -o=goproxie.exe
 
 deploy:
   provider: releases
   api_key:
     secure: EVUQISZ1j+E4/v8894Ie5M//FGxEGXAoO4gW1J078W9UdZsUxq8mE19uuvaQuk7YwkJ881RmWR6ruiMeFABR1TNbQfoi4eQqvpTPicHHJoeXzx1W2aX1UlWSFXsnMKX8zwxz/aBM+uraxdV+WaZFFssNDZTLGnAYwKVk20I6s1QptsNgbAI6tocalcO1Urhp2PJ9+JTuJrQ0bo5k/dEIh1whHz0jvljcnUBC1uZa2QTQiECPu39Q+2NVOE2YddLTFbAwwMrOTaRJK/wLKmAD78r/vH0NgWjwTIKwDVSgPm6rGp2kbrnv/s5THgv80RpwGRWrx+8kLsJkEoaGcgWDYhDC3LjojjCWxsOq781C2jdKSh1eA5WnZxnV6TktELdb/abCcwIicaPZMpikfiQNTmSQuCqSY8TB3aWsyCS5JHGEV4ZAAJhTAcYgfioFtTQ5dk/iQLbbxluQf+2S1beWfLBIOw7ir7boxap+7DYBMRcgHW9nXE98sT8DsGBndOjLA+uJ6yW4t78HWFXegLABacXqIjc6nawbO3GVectGXdB/WejwFYVKcfRPpc+Mw0bP8wG0c7M0BCfuxBmULun+EJGZAjrp8DL9lrOVD7xwvV85UogoaOtk82gDApc0PyJLCPOMEKLSZwSILagtGMfQ7eJb3/QpDAWOfuH0QlsEqek=
   file: 
-    - goproxie-win.exe
+    - goproxie.exe
     - goproxie-mac.zip
     - goproxie-linux.zip
   on:
