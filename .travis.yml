@@ -12,7 +12,7 @@ script:
 before_deploy:
   # Pass opts to Go compiler to set version from latest git tag at compile time
   # See https://www.digitalocean.com/community/tutorials/using-ldflags-to-set-version-information-for-go-applications
-  - LDFLAGS="-X 'github.com/AckeeCZ/goproxie/internal/version.Version=`git describe --tags --abbrev=0`'"
+  - LDFLAGS="-X github.com/AckeeCZ/goproxie/internal/version.Version=`git describe --tags --abbrev=0`"
   - echo $LDFLAGS
   - GOOS=linux go build -ldflags=$LDFLAGS -o=goproxie && zip goproxie-linux goproxie && rm goproxie
   - GOOS=darwin go build -ldflags=$LDFLAGS -o=goproxie && zip goproxie-mac goproxie && rm goproxie
