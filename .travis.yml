@@ -10,6 +10,7 @@ script:
   - "$GOPATH/bin/goveralls -service=travis-ci"
 
 before_deploy:
+  # Get latest git tag
   - LATEST_GIT_TAG=`git describe --tags --abbrev=0`
   # Pass opts to Go compiler to set version from latest git tag at compile time
   # See https://www.digitalocean.com/community/tutorials/using-ldflags-to-set-version-information-for-go-applications
@@ -26,12 +27,6 @@ deploy:
     - goproxie-mac.zip
     - goproxie-linux.zip
   on:
-    # TODO Remove when tested
-    branch: feat/travis-deploy
-    # TODO Uncomment when tested
-    # tags: true
+    tags: true
   skip_cleanup: true
-  overwrite: true
-  # TODO Uncomment when deploys are stable
-  draft: true
 
