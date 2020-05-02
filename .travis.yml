@@ -10,13 +10,12 @@ script:
   - "$GOPATH/bin/goveralls -service=travis-ci"
 
 before_deploy:
+  - LATEST_GIT_TAG=`git describe --tags --abbrev=0`
   # Pass opts to Go compiler to set version from latest git tag at compile time
   # See https://www.digitalocean.com/community/tutorials/using-ldflags-to-set-version-information-for-go-applications
-  - LDFLAGS="-X github.com/AckeeCZ/goproxie/internal/version.Version=`git describe --tags --abbrev=0`"
-  - echo $LDFLAGS
-  - GOOS=linux go build -ldflags=$LDFLAGS -o=goproxie && zip goproxie-linux goproxie && rm goproxie
-  - GOOS=darwin go build -ldflags=$LDFLAGS -o=goproxie && zip goproxie-mac goproxie && rm goproxie
-  - GOOS=windows go build -ldflags=$LDFLAGS -o=goproxie.exe
+  - GOOS=linux go build -ldflags="-X 'github.com/AckeeCZ/goproxie/internal/version.Version=$LATEST_GIT_TAG'" -o=goproxie && zip goproxie-linux goproxie && rm goproxie
+  - GOOS=darwin go build -ldflags="-X 'github.com/AckeeCZ/goproxie/internal/version.Version=$LATEST_GIT_TAG'" -o=goproxie && zip goproxie-mac goproxie && rm goproxie
+  - GOOS=windows go build -ldflags="-X 'github.com/AckeeCZ/goproxie/internal/version.Version=$LATEST_GIT_TAG'" -o=goproxie.exe
 
 deploy:
   provider: releases
