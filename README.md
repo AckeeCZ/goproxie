@@ -16,8 +16,12 @@
 
 ## Installation
 
-1. Make sure you have Go installed.
-2. Get goproxie:
+1. Make sure you have Go, `kubectl` and `gcloud` installed.
+2. Authorize `gcloud` to access the Cloud Platform with Google user credentials:
+```
+gcloud auth login
+```
+3. Get goproxie:
 ```
 go get -u github.com/AckeeCZ/goproxie
 ```
