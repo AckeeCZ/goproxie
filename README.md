@@ -9,6 +9,7 @@
 
 ## User manual
 
+- `goproxie version` to print the version
 - Use default `goproxie` to start interactive wizard
 - Use `goproxie history` to pick a used proxy settings
 - Use `goproxie -project=... -cluster=...` for non-interactive mode, see `--help` for all the options available
@@ -37,3 +38,9 @@ See coverage
 ```sh
 go test ./... -v -coverprofile=coverage.out && go tool cover -html=coverage.out
 ```
+
+## Release a new version
+
+- add a new git version tag , prefixed with `v`, e.g. `v12.34.56`
+- set it based on last tag and respect [Semantic Versioning](https://semver.org/)
+- goproxie will incorporate this tag in it's `version` command during release step when tags are pushed

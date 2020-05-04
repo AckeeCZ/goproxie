@@ -13,6 +13,7 @@ import (
 	"github.com/AckeeCZ/goproxie/internal/history"
 	"github.com/AckeeCZ/goproxie/internal/kubectl"
 	"github.com/AckeeCZ/goproxie/internal/store"
+	"github.com/AckeeCZ/goproxie/internal/version"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/briandowns/spinner"
 )
@@ -256,6 +257,11 @@ func readArguments() {
 }
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "version" {
+		fmt.Println(version.Get())
+		return
+	}
+
 	readArguments()
 	store.Initialize()
 	if len(os.Args) > 1 && os.Args[1] == "history" {
