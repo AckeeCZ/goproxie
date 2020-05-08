@@ -61,6 +61,7 @@ func loadingStop() {
 	loading.Suffix = ""
 }
 
+// Flags - goproxie program options
 type Flags struct {
 	project    *string
 	proxyType  *string

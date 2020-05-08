@@ -9,8 +9,11 @@ import (
 	"github.com/spf13/viper"
 )
 
+// MaxAppendLength defines max stored commands threshold
 const MaxAppendLength = 100
 
+// Initialize reads the configuration from config file.
+// File is created if not present.
 func Initialize() {
 	user, err := user.Current()
 	if err != nil {
@@ -44,15 +47,21 @@ func Initialize() {
 	viper.ReadInConfig()
 }
 
+// Set configuration key-value pair.
+// Value is immediately saved to config file.
 func Set(key string, value interface{}) error {
 	viper.Set(key, value)
 	return viper.WriteConfig()
 }
 
+// Get configuration value for key.
 func Get(key string) interface{} {
 	return viper.Get(key)
 }
 
+// Append value to given key. Expects the value to be an array or not set.
+// Acts as FIFO if length should be greater than MaxAppendLength, the first value
+// appended is the first to go.
 func Append(key string, value interface{}) error {
 	currentValue := []interface{}{}
 	if viper.IsSet(key) {
