@@ -58,8 +58,8 @@ func PodsList(namespace string) []*Pod {
 
 // PortForward executes kubectl's 'port-forward'.
 // Local port is bound to 0.0.0.0. via '--address'.
-func PortForward(podId string, localPort int, remotePort int, namespace string) {
-	cmd := exec.Command(kubectlPath, "port-forward", podId, fmt.Sprintf("%v:%v", localPort, remotePort), "--namespace", namespace, "--address", "0.0.0.0")
+func PortForward(podID string, localPort int, remotePort int, namespace string) {
+	cmd := exec.Command(kubectlPath, "port-forward", podID, fmt.Sprintf("%v:%v", localPort, remotePort), "--namespace", namespace, "--address", "0.0.0.0")
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	err := cmd.Run()

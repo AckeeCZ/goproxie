@@ -27,8 +27,8 @@ type Cluster struct {
 }
 
 //ContainerClustersList returns the list of GCP clusters
-func ContainerClustersList(projectId string) []*Cluster {
-	out := runCommand(gcloudPath, "container", "clusters", "list", "--format", "value(name, location)", "--project", projectId)
+func ContainerClustersList(projectID string) []*Cluster {
+	out := runCommand(gcloudPath, "container", "clusters", "list", "--format", "value(name, location)", "--project", projectID)
 	lines := strings.Split(out, "\n")
 	clusters := []*Cluster{}
 	for _, line := range lines {
