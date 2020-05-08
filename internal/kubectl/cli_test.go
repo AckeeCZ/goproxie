@@ -48,7 +48,7 @@ func TestPodsList(t *testing.T) {
 	defer unmock()
 	result := PodsList("anynamespace")
 	expectedItems := []*Pod{
-		&Pod{
+		{
 			Name: "acme-rockets-v0.3.0-74bf544f8b-lzc5b",
 			// TODO Is it OK to have [0] for <none>? Because it does that now.
 			ContainerPorts: []int{0},
@@ -58,7 +58,7 @@ func TestPodsList(t *testing.T) {
 			},
 			AppLabel: "acme-rockets",
 		},
-		&Pod{
+		{
 			Name:           "metrics-server-v0.3.3-6d96fcc55-2qtm8",
 			ContainerPorts: []int{443},
 			Containers: []string{
@@ -67,7 +67,7 @@ func TestPodsList(t *testing.T) {
 			},
 			AppLabel: "metrics-server",
 		},
-		&Pod{
+		{
 			Name:           "traefik-ig-7646cb565d-9zxv6",
 			ContainerPorts: []int{80, 443, 8080, 8081},
 			Containers: []string{
