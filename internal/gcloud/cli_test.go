@@ -46,7 +46,7 @@ func TestContainerClustersList(t *testing.T) {
 	defer unmock()
 	result := ContainerClustersList("anyproject")
 	expectedItems := []*Cluster{
-		&Cluster{
+		{
 			Name:     "production",
 			Location: "europe-west1-d",
 		},

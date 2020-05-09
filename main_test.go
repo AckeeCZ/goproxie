@@ -121,10 +121,10 @@ func TestHappyPath(t *testing.T) {
 	unmockAll := mockAll(
 		[]string{"project-1"},
 		[]*kubectl.Pod{
-			&kubectl.Pod{Name: "pod-1", ContainerPorts: []int{1}, Containers: []string{"container-1"}},
+			{Name: "pod-1", ContainerPorts: []int{1}, Containers: []string{"container-1"}},
 		},
 		[]*gcloud.Cluster{
-			&gcloud.Cluster{Name: "cluster-1", Location: "location-1"},
+			{Name: "cluster-1", Location: "location-1"},
 		},
 		"POD",
 		[]string{"namespace-1"},
@@ -154,10 +154,10 @@ func ExampleNoProjects() {
 	unmockAll := mockAll(
 		[]string{},
 		[]*kubectl.Pod{
-			&kubectl.Pod{Name: "pod-1", ContainerPorts: []int{1}, Containers: []string{"container-1"}},
+			{Name: "pod-1", ContainerPorts: []int{1}, Containers: []string{"container-1"}},
 		},
 		[]*gcloud.Cluster{
-			&gcloud.Cluster{Name: "cluster-1", Location: "location-1"},
+			{Name: "cluster-1", Location: "location-1"},
 		},
 		"POD",
 		[]string{"namespace-1"},
@@ -173,7 +173,7 @@ func ExampleNoClusters() {
 	unmockAll := mockAll(
 		[]string{"project-1"},
 		[]*kubectl.Pod{
-			&kubectl.Pod{Name: "pod-1", ContainerPorts: []int{1}, Containers: []string{"container-1"}},
+			{Name: "pod-1", ContainerPorts: []int{1}, Containers: []string{"container-1"}},
 		},
 		[]*gcloud.Cluster{},
 		"POD",
@@ -192,10 +192,10 @@ func ExampleNoNamespaces() {
 	unmockAll := mockAll(
 		[]string{"project-1"},
 		[]*kubectl.Pod{
-			&kubectl.Pod{Name: "pod-1", ContainerPorts: []int{1}, Containers: []string{"container-1"}},
+			{Name: "pod-1", ContainerPorts: []int{1}, Containers: []string{"container-1"}},
 		},
 		[]*gcloud.Cluster{
-			&gcloud.Cluster{Name: "cluster-1", Location: "location-1"},
+			{Name: "cluster-1", Location: "location-1"},
 		},
 		"POD",
 		[]string{},
@@ -215,7 +215,7 @@ func ExampleNoPods() {
 		[]string{"project-1"},
 		[]*kubectl.Pod{},
 		[]*gcloud.Cluster{
-			&gcloud.Cluster{Name: "cluster-1", Location: "location-1"},
+			{Name: "cluster-1", Location: "location-1"},
 		},
 		"POD",
 		[]string{"namespace-1"},
