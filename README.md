@@ -9,6 +9,8 @@
 
 ## User manual
 
+🚧 `SQL_CONNECTION=instance_connection_name go run .` (see https://github.com/GoogleCloudPlatform/cloudsql-proxy `-instances`, but without `=tcp:port`)
+
 - `goproxie version` to print the version
 - Use default `goproxie` to start interactive wizard
 - Use `goproxie history` to pick a used proxy settings

@@ -12,6 +12,7 @@ import (
 	"github.com/AckeeCZ/goproxie/internal/gcloud"
 	"github.com/AckeeCZ/goproxie/internal/history"
 	"github.com/AckeeCZ/goproxie/internal/kubectl"
+	"github.com/AckeeCZ/goproxie/internal/sqlproxy"
 	"github.com/AckeeCZ/goproxie/internal/store"
 	"github.com/AckeeCZ/goproxie/internal/version"
 	"github.com/AlecAivazis/survey/v2"
@@ -258,6 +259,8 @@ func readArguments() {
 }
 
 func main() {
+	sqlproxy.GetInstance()
+	return
 	if len(os.Args) > 1 && os.Args[1] == "version" {
 		fmt.Println(version.Get())
 		return
