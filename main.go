@@ -227,18 +227,36 @@ func readLocalPort(defaultPort int) int {
 }
 
 func readRemotePort(containerPorts []int) (port int) {
-	port, _ = promptSelection(selectField{
-		titleLoading: "Remote ports",
-		titleChoose:  "Remote port",
-		getOptions: func() (options []selectFieldOption) {
-			for _, port := range containerPorts {
-				options = append(options, selectFieldOption{title: strconv.Itoa(port), value: port})
-			}
-			return
-		},
-		valueTitle: *flags.remotePort,
-	}).(int)
-	return
+	if (len(containerPorts) > 0) {
+		port, _ = promptSelection(selectField{
+			titleLoading: "Remote ports",
+			titleChoose:  "Remote port",
+			getOptions: func() (options []selectFieldOption) {
+				for _, port := range containerPorts {
+					options = append(options, selectFieldOption{title: strconv.Itoa(port), value: port})
+				}
+				return
+			},
+			valueTitle: *flags.remotePort,
+		}).(int)
+		return
+	}
+	pickedPort := "3000"
+	if *flags.remotePort != "" {
+		pickedPort = *flags.remotePort
+		fmt.Printf("Choose remote port: %v\n", pickedPort)
+	} else {
+		prompt := &survey.Input{
+			Message: "Choose remote port:",
+			Default: pickedPort,
+		}
+		survey.AskOne(prompt, &pickedPort)
+	}
+	n, err := strconv.Atoi(pickedPort)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return n
 }
 
 func readArguments() {
