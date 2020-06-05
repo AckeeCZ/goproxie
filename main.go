@@ -227,7 +227,7 @@ func readLocalPort(defaultPort int) int {
 }
 
 func readRemotePort(containerPorts []int) (port int) {
-	if (len(containerPorts) > 0) {
+	if len(containerPorts) > 0 {
 		port, _ = promptSelection(selectField{
 			titleLoading: "Remote ports",
 			titleChoose:  "Remote port",
