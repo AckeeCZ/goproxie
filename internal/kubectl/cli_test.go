@@ -50,8 +50,7 @@ func TestPodsList(t *testing.T) {
 	expectedItems := []*Pod{
 		{
 			Name: "acme-rockets-v0.3.0-74bf544f8b-lzc5b",
-			// TODO Is it OK to have [0] for <none>? Because it does that now.
-			ContainerPorts: []int{0},
+			ContainerPorts: []int{},
 			Containers: []string{
 				"event-exporter",
 				"prometheus-to-sd-exporter",

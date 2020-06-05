@@ -48,8 +48,10 @@ func PodsList(namespace string) []*Pod {
 		portsStr := strings.Split(tokens[2], ",")
 		ports := make([]int, 0, len(portsStr))
 		for _, portStr := range portsStr {
-			port, _ := strconv.Atoi(portStr)
-			ports = append(ports, port)
+			port, err := strconv.Atoi(portStr)
+			if (err == nil) {
+				ports = append(ports, port)
+			}
 		}
 		pods = append(pods, &Pod{Name: tokens[0], Containers: containers, ContainerPorts: ports, AppLabel: tokens[3]})
 	}
