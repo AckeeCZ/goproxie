@@ -1,9 +1,11 @@
 package sqlproxy
 
-// Inspired by TODO
+// Mostly copied from:
+// https://github.com/GoogleCloudPlatform/cloudsql-proxy/blob/master/cmd/cloud_sql_proxy/proxy.go
+// https://github.com/GoogleCloudPlatform/cloudsql-proxy/blob/master/cmd/cloud_sql_proxy/cloud_sql_proxy.go
+// Not happy with it, but I cant import it due to "is a program, not an importable package"
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -16,8 +18,12 @@ import (
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/certs"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
-	"golang.org/x/net/context"
-	"golang.org/x/oauth2/google"
+)
+
+const (
+	minimumRefreshCfgThrottle = time.Second
+
+	port = 3307
 )
 
 const dialersTimeout = time.Minute
@@ -144,24 +150,14 @@ func WatchInstances(dir string, cfgs []instanceConfig, updates <-chan string, cl
 	return ch, nil
 }
 
-func GetInstance() {
-	localPort := 3306
-	instanceConnectionName := os.Getenv("SQL_CONNECTION")
-	fmt.Println(instanceConnectionName)
-
+// CreateProxy creates a proxy tunnel to a given instance
+func CreateProxy(localPort int, instanceConnectionName CloudSQLInstance) {
 	dir := "" // Not much idea what that is
 
-	// TODO instList must not be empty
+	client := CreateHTTPAuthClient()
 
-	ctx := context.Background()
-	client, err := google.DefaultClient(ctx, proxy.SQLScope)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// TODO List instances https://github.com/GoogleCloudPlatform/cloudsql-proxy/blob/a9864b03c326489eaf82f48e2c971e6a30ca00b2/cmd/cloud_sql_proxy/cloud_sql_proxy.go#L327
 	cfgs := []instanceConfig{
-		{Instance: fmt.Sprintf("%v=tcp:%v", instanceConnectionName, localPort), Network: "tcp", Address: net.JoinHostPort("127.0.0.1", strconv.Itoa(localPort))},
+		{Instance: string(instanceConnectionName), Network: "tcp", Address: net.JoinHostPort("0.0.0.0", strconv.Itoa(localPort))},
 	}
 
 	// We only need to store connections in a ConnSet if FUSE is used; otherwise
@@ -184,12 +180,12 @@ func GetInstance() {
 	host := ""
 	var maxConnections uint64 = 20
 	proxyClient := &proxy.Client{
-		Port:           localPort,
+		Port:           port,
 		MaxConnections: maxConnections,
 		Certs: certs.NewCertSourceOpts(client, certs.RemoteOpts{
 			APIBasePath:    host,
 			IgnoreRegion:   true,
-			UserAgent:      "", // TODO Add version
+			UserAgent:      "goproxie",
 			IPAddrTypeOpts: []string{"PUBLIC", "PRIVATE"},
 		}),
 		Conns:              connset,

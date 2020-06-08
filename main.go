@@ -30,9 +30,9 @@ func initializationCheck() {
 	// TODO
 }
 
-var readProxyType = func() string {
+var readProxyType = func() ProxyType {
 	proxyType := ""
-	proxyTypes := []string{"VM", "POD"}
+	proxyTypes := []string{string(ProxyTypePod), string(ProxyTypeSQL) /*, ProxyTypeVM*/}
 	if *flags.proxyType != "" {
 		filtered := filterStrings(proxyTypes, *flags.proxyType)
 		if len(filtered) > 0 {
@@ -42,13 +42,24 @@ var readProxyType = func() string {
 	} else {
 		prompt := &survey.Select{
 			Message: "Choose proxy type:",
-			// TODO Refactor types to Enums
 			Options: proxyTypes,
 		}
 		survey.AskOne(prompt, &proxyType)
 	}
-	return proxyType
+	return ProxyType(proxyType)
 }
+
+// ProxyType is one of Pod, CloudSQL, VM
+type ProxyType string
+
+const (
+	// ProxyTypePod Pod proxy type
+	ProxyTypePod ProxyType = "POD"
+	// ProxyTypeSQL CloudSQL proxy type
+	ProxyTypeSQL ProxyType = "CLOUD_SQL"
+	// ProxyTypeVM VM proxy type
+	ProxyTypeVM ProxyType = "VM"
+)
 
 // 💡 Spinner!
 var loading = spinner.New(spinner.CharSets[21], 100*time.Millisecond)
@@ -72,7 +83,8 @@ type Flags struct {
 	localPort  *string
 	remotePort *string
 	/** Dont save to history */
-	noSave *bool
+	noSave      *bool
+	sqlInstance *string
 }
 
 var flags = &Flags{}
@@ -208,6 +220,25 @@ func readPod(namespace string) (pod *kubectl.Pod) {
 	return
 }
 
+func readCloudSQLInstance(projectID string) (instance sqlproxy.CloudSQLInstance) {
+	instance, _ = promptSelection(selectField{
+		titleLoading: "Cloud SQL instances",
+		titleChoose:  "Cloud SQL instance",
+		getOptions: func() (options []selectFieldOption) {
+			instances, err := sqlproxy.GetInstancesList([]string{projectID})
+			if err != nil {
+				log.Fatal(err)
+			}
+			for _, instance := range instances {
+				options = append(options, selectFieldOption{title: instance, value: instance})
+			}
+			return
+		},
+		valueTitle: *flags.sqlInstance,
+	}).(sqlproxy.CloudSQLInstance)
+	return
+}
+
 func readLocalPort(defaultPort int) int {
 	port := "3000"
 	if *flags.localPort != "" {
@@ -253,14 +284,13 @@ func readArguments() {
 	flags.localPort = flag.String("local_port", "", "Auto Local port pick")
 	flags.remotePort = flag.String("remote_port", "", "Auto Remote port pick")
 	flags.noSave = flag.Bool("no-save", false, "Don't save invocation to history")
+	flags.sqlInstance = flag.String("sql_instance", "", "Cloud SQL Instance in form project:region:instance-name")
 	flag.Parse()
 	gcloud.SetGcloudPath(*gcloudPath)
 	kubectl.SetKubectlPath(*kubectlPath)
 }
 
 func main() {
-	sqlproxy.GetInstance()
-	return
 	if len(os.Args) > 1 && os.Args[1] == "version" {
 		fmt.Println(version.Get())
 		return
@@ -278,12 +308,12 @@ func main() {
 		return
 	}
 	proxyType := readProxyType()
-	cluster := readCluster(projectID)
-	if cluster == nil {
-		fmt.Println("Could not find any GCP Clusters")
-		return
-	}
-	if proxyType == "POD" {
+	if proxyType == ProxyTypePod {
+		cluster := readCluster(projectID)
+		if cluster == nil {
+			fmt.Println("Could not find any GCP Clusters")
+			return
+		}
 		loadingStart("Loading Cluster credentials")
 		gcloudGetClusterCredentials(projectID, cluster)
 		loadingStop()
@@ -303,6 +333,11 @@ func main() {
 			history.StorePodProxy(projectID, cluster, namespace, pod, localPort, remotePort)
 		}
 		kubectlPortForward(pod.Name, localPort, remotePort, namespace)
+	}
+	if proxyType == ProxyTypeSQL {
+		sqlInstance := readCloudSQLInstance(projectID)
+		localPort := readLocalPort(3306)
+		sqlproxy.CreateProxy(localPort, sqlInstance)
 	}
 
 	// fmt.Println(project_id)
