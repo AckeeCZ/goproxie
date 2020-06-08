@@ -337,6 +337,9 @@ func main() {
 	if proxyType == ProxyTypeSQL {
 		sqlInstance := readCloudSQLInstance(projectID)
 		localPort := readLocalPort(3306)
+		if *flags.noSave == false {
+			history.StoreCloudSQLProxy(projectID, sqlInstance, localPort)
+		}
 		sqlproxy.CreateProxy(localPort, sqlInstance)
 	}
 
