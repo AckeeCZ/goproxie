@@ -32,7 +32,7 @@ func initializationCheck() {
 
 var readProxyType = func() ProxyType {
 	proxyType := ""
-	proxyTypes := []string{string(ProxyTypePod), string(ProxyTypeSQL) /*, ProxyTypeVM*/}
+	proxyTypes := []string{string(ProxyTypePod), string(ProxyTypeSQL)}
 	if *flags.proxyType != "" {
 		filtered := filterStrings(proxyTypes, *flags.proxyType)
 		if len(filtered) > 0 {
