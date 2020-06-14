@@ -49,7 +49,7 @@ var readProxyType = func() ProxyType {
 	return ProxyType(proxyType)
 }
 
-// ProxyType is one of Pod, CloudSQL, VM
+// ProxyType is one of Pod, CloudSQL
 type ProxyType string
 
 const (
@@ -57,8 +57,6 @@ const (
 	ProxyTypePod ProxyType = "POD"
 	// ProxyTypeSQL CloudSQL proxy type
 	ProxyTypeSQL ProxyType = "CLOUD_SQL"
-	// ProxyTypeVM VM proxy type
-	ProxyTypeVM ProxyType = "VM"
 )
 
 // 💡 Spinner!
@@ -230,7 +228,7 @@ func readCloudSQLInstance(projectID string) (instance sqlproxy.CloudSQLInstance)
 				log.Fatal(err)
 			}
 			for _, instance := range instances {
-				options = append(options, selectFieldOption{title: instance, value: instance})
+				options = append(options, selectFieldOption{title: instance.ConnectionName, value: instance})
 			}
 			return
 		},
@@ -336,7 +334,7 @@ func main() {
 	}
 	if proxyType == ProxyTypeSQL {
 		sqlInstance := readCloudSQLInstance(projectID)
-		localPort := readLocalPort(3306)
+		localPort := readLocalPort(sqlInstance.DefaultPort)
 		if *flags.noSave == false {
 			history.StoreCloudSQLProxy(projectID, sqlInstance, localPort)
 		}

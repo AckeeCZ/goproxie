@@ -157,7 +157,7 @@ func CreateProxy(localPort int, instanceConnectionName CloudSQLInstance) {
 	client := CreateHTTPAuthClient()
 
 	cfgs := []instanceConfig{
-		{Instance: string(instanceConnectionName), Network: "tcp", Address: net.JoinHostPort("0.0.0.0", strconv.Itoa(localPort))},
+		{Instance: instanceConnectionName.ConnectionName, Network: "tcp", Address: net.JoinHostPort("0.0.0.0", strconv.Itoa(localPort))},
 	}
 
 	// We only need to store connections in a ConnSet if FUSE is used; otherwise

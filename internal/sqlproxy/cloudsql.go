@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
@@ -27,11 +28,57 @@ func CreateHTTPAuthClient() *http.Client {
 	return client
 }
 
-// CloudSQLInstance in form project[:region]:instance-name
-type CloudSQLInstance = string
+// CloudSQLInstanceType is one of supported POSTGRES, MYSQL, SQLSERVER
+type CloudSQLInstanceType string
+
+const (
+	// TypePostgres cloud SQL instance
+	TypePostgres CloudSQLInstanceType = "POSTGRES"
+	// TypeMySQL cloud SQL instance
+	TypeMySQL CloudSQLInstanceType = "MYSQL"
+	// TypeSQLServer cloud SQL instance
+	TypeSQLServer CloudSQLInstanceType = "SQLSERVER"
+	// TypeUnknown for unknown cloud SQL instance type
+	TypeUnknown CloudSQLInstanceType = "UNKNOWN"
+)
+
+// CloudSQLInstance struct
+type CloudSQLInstance struct {
+	// project[:region]:instance-name
+	ConnectionName string
+	Type           CloudSQLInstanceType
+	DefaultPort    int
+}
+
+// GetDefaultPortForType returns default port for given database type
+func GetDefaultPortForType(dbType CloudSQLInstanceType) int {
+	switch dbType {
+	case TypePostgres:
+		return 5432
+	case TypeMySQL:
+		return 3306
+	case TypeSQLServer:
+		return 1433
+	default:
+		return 0
+	}
+}
+
+func getSQLInstanceType(in *sqladmin.DatabaseInstance) CloudSQLInstanceType {
+	if strings.Contains(in.DatabaseVersion, "POSTGRES") {
+		return TypePostgres
+	}
+	if strings.Contains(in.DatabaseVersion, "SQLSERVER") {
+		return TypeSQLServer
+	}
+	if strings.Contains(in.DatabaseVersion, "MYSQL") {
+		return TypeMySQL
+	}
+	return TypeUnknown
+}
 
 // GetInstancesList gets list of Cloud SQL instances for given projects
-func GetInstancesList(projects []string) ([]string, error) {
+func GetInstancesList(projects []string) ([]CloudSQLInstance, error) {
 	ctx := context.Background()
 	client := CreateHTTPAuthClient()
 	if len(projects) == 0 {
@@ -47,7 +94,7 @@ func GetInstancesList(projects []string) ([]string, error) {
 		sql.BasePath = host
 	}
 
-	ch := make(chan string)
+	ch := make(chan CloudSQLInstance)
 	var wg sync.WaitGroup
 	wg.Add(len(projects))
 	for _, proj := range projects {
@@ -57,7 +104,9 @@ func GetInstancesList(projects []string) ([]string, error) {
 				for _, in := range r.Items {
 					// The Proxy is only support on Second Gen
 					if in.BackendType == "SECOND_GEN" {
-						ch <- fmt.Sprintf("%s:%s:%s", in.Project, in.Region, in.Name)
+						connName := fmt.Sprintf("%s:%s:%s", in.Project, in.Region, in.Name)
+						dbType := getSQLInstanceType(in)
+						ch <- CloudSQLInstance{ConnectionName: connName, Type: dbType, DefaultPort: GetDefaultPortForType(dbType)}
 					}
 				}
 				return nil
@@ -72,7 +121,7 @@ func GetInstancesList(projects []string) ([]string, error) {
 		wg.Wait()
 		close(ch)
 	}()
-	var ret []string
+	var ret []CloudSQLInstance
 	for x := range ch {
 		ret = append(ret, x)
 	}
