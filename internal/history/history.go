@@ -9,6 +9,7 @@ import (
 
 	"github.com/AckeeCZ/goproxie/internal/gcloud"
 	"github.com/AckeeCZ/goproxie/internal/kubectl"
+	"github.com/AckeeCZ/goproxie/internal/sqlproxy"
 	"github.com/AckeeCZ/goproxie/internal/store"
 	"github.com/AlecAivazis/survey/v2"
 )
@@ -21,6 +22,12 @@ const KeyCommands = "history.commands"
 func StorePodProxy(projectID string, cluster *gcloud.Cluster, namespace string, pod *kubectl.Pod, localPort int, remotePort int) {
 
 	record := fmt.Sprintf("-project=%v -cluster=%v -namespace=%v -pod=%v -local_port=%v -proxy_type=pod", projectID, cluster.Name, namespace, pod.AppLabel, localPort)
+	store.Append(KeyCommands, record)
+}
+
+// StoreCloudSQLProxy appends the given run configuration to history commands
+func StoreCloudSQLProxy(projectID string, instance sqlproxy.CloudSQLInstance, localPort int) {
+	record := fmt.Sprintf("-project=%v -sql_instance=%v -local_port=%v -proxy_type=sql", projectID, instance, localPort)
 	store.Append(KeyCommands, record)
 }
 

@@ -39,9 +39,9 @@ func mockGcloudContainerClustersList(mockedClusters []*gcloud.Cluster) func() {
 	}
 }
 
-func mockProxyType(proxyType string) func() {
+func mockProxyType(proxyType ProxyType) func() {
 	originalFn := readProxyType
-	readProxyType = func() string {
+	readProxyType = func() ProxyType {
 		return proxyType
 	}
 	return func() {
