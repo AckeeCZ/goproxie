@@ -27,7 +27,7 @@ func StorePodProxy(projectID string, cluster *gcloud.Cluster, namespace string, 
 
 // StoreCloudSQLProxy appends the given run configuration to history commands
 func StoreCloudSQLProxy(projectID string, instance sqlproxy.CloudSQLInstance, localPort int) {
-	record := fmt.Sprintf("-project=%v -sql_instance=%v -local_port=%v -proxy_type=sql", projectID, instance, localPort)
+	record := fmt.Sprintf("-project=%v -sql_instance=%v -local_port=%v -proxy_type=sql", projectID, instance.ConnectionName, localPort)
 	store.Append(KeyCommands, record)
 }
 
