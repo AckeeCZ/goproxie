@@ -140,6 +140,9 @@ func promptSelection(sel selectField) interface{} {
 }
 
 func readProjectID() (projectID string) {
+	if isBlindCloudSQLConnection() {
+		return ""
+	}
 	// Cannot return directly, I have to accept both return values to avoid crash 🤷
 	// https://gist.github.com/smoliji/f72fe94b028125a22efa53a430ba007a
 	projectID, _ = promptSelection(selectField{
@@ -219,6 +222,11 @@ func readPod(namespace string) (pod *kubectl.Pod) {
 }
 
 func readCloudSQLInstance(projectID string) (instance sqlproxy.CloudSQLInstance) {
+	// Allow to connect using only the instance connection name
+	// when user does not have `gcloud projects list` project rights
+	if isBlindCloudSQLConnection() {
+		return sqlproxy.CloudSQLInstance{ConnectionName: *flags.sqlInstance, Type: sqlproxy.TypeUnknown}
+	}
 	instance, _ = promptSelection(selectField{
 		titleLoading: "Cloud SQL instances",
 		titleChoose:  "Cloud SQL instance",
@@ -300,10 +308,14 @@ func readArguments() {
 	flags.localPort = flag.String("local_port", "", "Auto Local port pick")
 	flags.remotePort = flag.String("remote_port", "", "Auto Remote port pick")
 	flags.noSave = flag.Bool("no-save", false, "Don't save invocation to history")
-	flags.sqlInstance = flag.String("sql_instance", "", "Cloud SQL Instance in form project:region:instance-name")
+	flags.sqlInstance = flag.String("sql_instance", "", "Cloud SQL Instance in form project:region:instance-name. Can be used if you dont have permissions to list the GCP project.")
 	flag.Parse()
 	gcloud.SetGcloudPath(*gcloudPath)
 	kubectl.SetKubectlPath(*kubectlPath)
+}
+
+func isBlindCloudSQLConnection() bool {
+	return *flags.sqlInstance != "" && *flags.project == ""
 }
 
 func main() {
@@ -319,7 +331,7 @@ func main() {
 		return
 	}
 	projectID := readProjectID()
-	if projectID == "" {
+	if projectID == "" && !isBlindCloudSQLConnection() {
 		fmt.Println("Could not find any GCP Projects")
 		return
 	}
