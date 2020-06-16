@@ -223,7 +223,7 @@ func readPod(namespace string) (pod *kubectl.Pod) {
 
 func readCloudSQLInstance(projectID string) (instance sqlproxy.CloudSQLInstance) {
 	// Allow to connect using only the instance connection name
-	// when user does not have `gcloud projects list` projec rights
+	// when user does not have `gcloud projects list` project rights
 	if isBlindCloudSQLConnection() {
 		return sqlproxy.CloudSQLInstance{ConnectionName: *flags.sqlInstance, Type: sqlproxy.TypeUnknown}
 	}
