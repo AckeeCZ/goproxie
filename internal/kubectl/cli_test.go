@@ -6,6 +6,7 @@ import "testing"
 
 // Should contain <none> ports and multi-ports
 var mockPodsList = `acme-rockets-v0.3.0-74bf544f8b-lzc5b                      event-exporter,prometheus-to-sd-exporter      <none>           acme-rockets
+acme-finances-0                                           event-exporter                                <none>           <none>
 metrics-server-v0.3.3-6d96fcc55-2qtm8                       metrics-server,metrics-server-nanny           443           metrics-server
 traefik-ig-7646cb565d-9zxv6                                 traefik                                       80,443,8080,8081           traefik-ig
 `
@@ -49,13 +50,21 @@ func TestPodsList(t *testing.T) {
 	result := PodsList("anynamespace")
 	expectedItems := []*Pod{
 		{
-			Name: "acme-rockets-v0.3.0-74bf544f8b-lzc5b",
+			Name:           "acme-rockets-v0.3.0-74bf544f8b-lzc5b",
 			ContainerPorts: []int{},
 			Containers: []string{
 				"event-exporter",
 				"prometheus-to-sd-exporter",
 			},
 			AppLabel: "acme-rockets",
+		},
+		{
+			Name:           "acme-finances-0",
+			ContainerPorts: []int{},
+			Containers: []string{
+				"event-exporter",
+			},
+			AppLabel: "acme-finances-0",
 		},
 		{
 			Name:           "metrics-server-v0.3.3-6d96fcc55-2qtm8",

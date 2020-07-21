@@ -53,7 +53,13 @@ func PodsList(namespace string) []*Pod {
 				ports = append(ports, port)
 			}
 		}
-		pods = append(pods, &Pod{Name: tokens[0], Containers: containers, ContainerPorts: ports, AppLabel: tokens[3]})
+		name := tokens[0]
+		appLabel := tokens[3]
+		// `<none>` is empty serialization value from kubectl
+		if appLabel == "<none>" {
+			appLabel = name
+		}
+		pods = append(pods, &Pod{Name: name, Containers: containers, ContainerPorts: ports, AppLabel: appLabel})
 	}
 	return pods
 }
