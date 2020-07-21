@@ -31,6 +31,20 @@ func StoreCloudSQLProxy(projectID string, instance sqlproxy.CloudSQLInstance, lo
 	store.Append(KeyCommands, record)
 }
 
+func deduplicate(commands []string) []string {
+	uniqueCommand := make(map[string]string)
+	// Gotta have a separate struct for results to maintain ordering https://blog.golang.org/maps#TOC_7.
+	uniqueCommands := []string{}
+	for _, command := range commands {
+		if uniqueCommand[command] == "" {
+			uniqueCommands = append(uniqueCommands, command)
+			uniqueCommand[command] = command
+		}
+	}
+	store.Set(KeyCommands, uniqueCommands)
+	return uniqueCommands
+}
+
 // Browse lets user choose from stored commands.
 // Goproxie is executed with given arguments.
 func Browse() {
@@ -43,6 +57,7 @@ func Browse() {
 			commands = append(commands, fmt.Sprint(item))
 		}
 	}
+	commands = deduplicate(commands)
 
 	if len(commands) == 0 {
 		fmt.Println("History is empty")
