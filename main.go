@@ -33,8 +33,13 @@ func initializationCheck() {
 var readProxyType = func() ProxyType {
 	proxyType := ""
 	proxyTypes := []string{string(ProxyTypePod), string(ProxyTypeSQL)}
-	if *flags.proxyType != "" {
-		filtered := filterStrings(proxyTypes, *flags.proxyType)
+
+	desiredProxyType := *flags.proxyType
+	if flags.sqlInstance != nil {
+		desiredProxyType = string(ProxyTypeSQL)
+	}
+	if desiredProxyType != "" {
+		filtered := filterStrings(proxyTypes, desiredProxyType)
 		if len(filtered) > 0 {
 			proxyType = filtered[0]
 			fmt.Printf("Choose proxy type: %v\n", proxyType)
