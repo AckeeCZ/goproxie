@@ -21,11 +21,18 @@
 ```
 gcloud auth login
 ```
+```
+gcloud auth application-default login
+```
 3. Get goproxie:
-```
-go get -u github.com/AckeeCZ/goproxie
-```
-This will download the source and compile the executable `$GOPATH/bin/goproxie`. Make sure `$GOPATH/bin` is in your `$PATH`.
+
+    a) Build from source
+    ```
+    go get -u github.com/AckeeCZ/goproxie
+    ```
+    This will download the source and compile the executable `$GOPATH/bin/goproxie`. Make sure `$GOPATH/bin` is in your `$PATH`.
+
+    b) Download latest executable for macOS, Windows, Linux [here](https://github.com/AckeeCZ/goproxie/releases)
 
 ## Test
 
