@@ -35,7 +35,7 @@ var readProxyType = func() ProxyType {
 	proxyTypes := []string{string(ProxyTypePod), string(ProxyTypeSQL)}
 
 	desiredProxyType := *flags.proxyType
-	if flags.sqlInstance != nil {
+	if *flags.sqlInstance != "" {
 		desiredProxyType = string(ProxyTypeSQL)
 	}
 	if desiredProxyType != "" {
