@@ -229,3 +229,34 @@ func ExampleNoPods() {
 	// K8S Namespace: namespace-1
 	// Could not find any K8S Pods in namespace namespace-1
 }
+
+func TestAutoselectionFixSuffixes(t *testing.T) {
+	resetFlags()
+	unmockAll := mockAll(
+		[]string{"project-1-suffixed", "project-1"},
+		[]*kubectl.Pod{
+			{Name: "pod-1-suffixed", ContainerPorts: []int{1}, Containers: []string{"container-1"}},
+			{Name: "pod-1", ContainerPorts: []int{1}, Containers: []string{"container-1"}},
+		},
+		[]*gcloud.Cluster{
+			{Name: "cluster-1-suffixed", Location: "location-1"},
+			{Name: "cluster-1", Location: "location-1"},
+		},
+		"POD",
+		[]string{"namespace-1-suffixed", "namespace-1"},
+	)
+	defer unmockAll()
+	os.Args = []string{"goproxie", "-project=project-1", "-pod=pod-1", "-cluster=cluster-1", "-namespace=namespace-1", "-local_port=1234"}
+	unmockPortForward := mockKubectlPortForward()
+	main()
+	calledWith := unmockPortForward()
+	if calledWith.localPort != 1234 {
+		t.Errorf("Expected port-forward to be called with localPort=%v, but was called with %v", 1234, calledWith.localPort)
+	}
+	if calledWith.podName != "pod-1" {
+		t.Errorf("Expected port-forward to be called with podName=%v, but was called with %v", 1, calledWith.podName)
+	}
+	if calledWith.namespace != "namespace-1" {
+		t.Errorf("Expected port-forward to be called with namespace=%v, but was called with %v", 1, calledWith.namespace)
+	}
+}

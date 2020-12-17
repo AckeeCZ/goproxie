@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -179,6 +180,18 @@ func readCluster(projectID string) (cluster *gcloud.Cluster) {
 	return
 }
 
+type byLength []string
+
+func (s byLength) Len() int {
+	return len(s)
+}
+func (s byLength) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+func (s byLength) Less(i, j int) bool {
+	return len(s[i]) < len(s[j])
+}
+
 func filterStrings(options []string, filter string) []string {
 	if len(filter) == 0 {
 		return options
@@ -193,6 +206,7 @@ func filterStrings(options []string, filter string) []string {
 			results = append(results, option)
 		}
 	}
+	sort.Sort(byLength(results))
 	return results
 }
 
