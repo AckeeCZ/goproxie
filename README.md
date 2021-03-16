@@ -12,6 +12,7 @@
 - `goproxie version` to print the version
 - Use default `goproxie` to start interactive wizard
 - Use `goproxie history` to pick a used proxy settings
+- Use `goproxie use` to interactively select and set your default GCP project. `-project` flag available.
 - Use `goproxie -project=... -cluster=...` for non-interactive mode, see `--help` for all the options available
 
 ## Installation
