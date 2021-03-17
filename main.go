@@ -345,7 +345,12 @@ func main() {
 	if len(os.Args) < 2 {
 		readArguments(1)
 	} else {
-		readArguments(2)
+		switch os.Args[1] {
+		case "version", "history", "use":
+			readArguments(2)
+		default:
+			readArguments(1)
+		}
 	}
 
 	if len(os.Args) > 1 && os.Args[1] == "version" {
