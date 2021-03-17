@@ -41,6 +41,13 @@ func ContainerClustersList(projectID string) []*Cluster {
 	// return Cluster{name: results[0], location: results[1]}
 }
 
+// gcloud config set project PROJECT
+
+//SetDefaultProject sets the default Project for the gcloud cli
+func SetDefaultProject(projectID string) {
+	util.RunSilentCommand(gcloudPath, "config", "set", "project", projectID)
+}
+
 // GetClusterCredentials gets credentials for the given GCP cluster
 func GetClusterCredentials(projectID string, cluster *Cluster) {
 	util.RunSilentCommand(gcloudPath, "container", "clusters", "get-credentials", cluster.Name, "--project", projectID, "--zone", cluster.Location)

@@ -24,6 +24,7 @@ var gcloudProjectsList = gcloud.ProjectsList
 var kubectlPodsList = kubectl.PodsList
 var gcloudContainerClustersList = gcloud.ContainerClustersList
 var gcloudGetClusterCredentials = gcloud.GetClusterCredentials
+var gcloudSetProject = gcloud.SetDefaultProject
 var kubectlNamespacesList = kubectl.NamespacesList
 var kubectlPortForward = kubectl.PortForward
 
@@ -316,19 +317,21 @@ func readRemotePort(containerPorts []int) (port int) {
 	return n
 }
 
-func readArguments() {
-	gcloudPath := flag.String("gcloud_path", "gcloud", "gcloud binary path")
-	kubectlPath := flag.String("kubectl_path", "kubectl", "kubectl binary path")
-	flags.project = flag.String("project", "", "Auto GCP Project pick")
-	flags.proxyType = flag.String("proxy_type", "", "Auto Proxy type pick")
-	flags.cluster = flag.String("cluster", "", "Auto Cluster pick")
-	flags.namespace = flag.String("namespace", "", "Auto Namespace pick")
-	flags.pod = flag.String("pod", "", "Auto Pod pick")
-	flags.localPort = flag.String("local_port", "", "Auto Local port pick")
-	flags.remotePort = flag.String("remote_port", "", "Auto Remote port pick")
-	flags.noSave = flag.Bool("no-save", false, "Don't save invocation to history")
-	flags.sqlInstance = flag.String("sql_instance", "", "Cloud SQL Instance in form project:region:instance-name. Can be used if you dont have permissions to list the GCP project.")
-	flag.Parse()
+func readArguments(index int) {
+	flagSet := flag.NewFlagSet("", flag.ExitOnError)
+	gcloudPath := flagSet.String("gcloud_path", "gcloud", "gcloud binary path")
+	kubectlPath := flagSet.String("kubectl_path", "kubectl", "kubectl binary path")
+	flags.project = flagSet.String("project", "", "Auto GCP Project pick")
+	flags.proxyType = flagSet.String("proxy_type", "", "Auto Proxy type pick")
+	flags.cluster = flagSet.String("cluster", "", "Auto Cluster pick")
+	flags.namespace = flagSet.String("namespace", "", "Auto Namespace pick")
+	flags.pod = flagSet.String("pod", "", "Auto Pod pick")
+	flags.localPort = flagSet.String("local_port", "", "Auto Local port pick")
+	flags.remotePort = flagSet.String("remote_port", "", "Auto Remote port pick")
+	flags.noSave = flagSet.Bool("no-save", false, "Don't save invocation to history")
+	flags.sqlInstance = flagSet.String("sql_instance", "", "Cloud SQL Instance in form project:region:instance-name. Can be used if you dont have permissions to list the GCP project.")
+
+	flagSet.Parse(os.Args[index:])
 	gcloud.SetGcloudPath(*gcloudPath)
 	kubectl.SetKubectlPath(*kubectlPath)
 }
@@ -338,22 +341,41 @@ func isBlindCloudSQLConnection() bool {
 }
 
 func main() {
+
+	if len(os.Args) < 2 {
+		readArguments(1)
+	} else {
+		switch os.Args[1] {
+		case "version", "history", "use":
+			readArguments(2)
+		default:
+			readArguments(1)
+		}
+	}
+
 	if len(os.Args) > 1 && os.Args[1] == "version" {
 		fmt.Println(version.Get())
 		return
 	}
 
-	readArguments()
 	store.Initialize()
 	if len(os.Args) > 1 && os.Args[1] == "history" {
 		history.Browse()
 		return
 	}
+
 	projectID := readProjectID()
 	if projectID == "" && !isBlindCloudSQLConnection() {
 		fmt.Println("Could not find any GCP Projects")
 		return
 	}
+
+	if len(os.Args) > 1 && os.Args[1] == "use" {
+		gcloudSetProject(projectID)
+		fmt.Printf("Set gcloud default project to: %s", projectID)
+		return
+	}
+
 	proxyType := readProxyType()
 	if proxyType == ProxyTypePod {
 		cluster := readCluster(projectID)

@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2021-03-17
+### Added
+- Add `use` subcommand as convenient shorthand for setting default `gcloud` project. With support of interactive or autocompletion `-project` mode.
+
 ## [1.4.0] - 2020-12-17
 ### Changed
 - Select proxy type automatically when `sql_instance` is passed
