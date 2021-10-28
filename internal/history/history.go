@@ -5,12 +5,13 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 
+	"github.com/AckeeCZ/goproxie/internal/fsconfig"
 	"github.com/AckeeCZ/goproxie/internal/gcloud"
 	"github.com/AckeeCZ/goproxie/internal/kubectl"
 	"github.com/AckeeCZ/goproxie/internal/sqlproxy"
-	"github.com/AckeeCZ/goproxie/internal/store"
 	"github.com/AlecAivazis/survey/v2"
 )
 
@@ -22,42 +23,70 @@ const KeyCommands = "history.commands"
 func StorePodProxy(projectID string, cluster *gcloud.Cluster, namespace string, pod *kubectl.Pod, localPort int, remotePort int) {
 
 	record := fmt.Sprintf("-project=%v -cluster=%v -namespace=%v -pod=%v -local_port=%v -proxy_type=pod", projectID, cluster.Name, namespace, pod.AppLabel, localPort)
-	store.Append(KeyCommands, record)
+	fsconfig.AppendHistoryCommand(record)
 }
 
 // StoreCloudSQLProxy appends the given run configuration to history commands
 func StoreCloudSQLProxy(projectID string, instance sqlproxy.CloudSQLInstance, localPort int) {
 	record := fmt.Sprintf("-project=%v -sql_instance=%v -local_port=%v -proxy_type=sql", projectID, instance.ConnectionName, localPort)
-	store.Append(KeyCommands, record)
+	fsconfig.AppendHistoryCommand(record)
 }
 
-func deduplicate(commands []string) []string {
-	uniqueCommand := make(map[string]string)
-	// Gotta have a separate struct for results to maintain ordering https://blog.golang.org/maps#TOC_7.
-	uniqueCommands := []string{}
-	for _, command := range commands {
-		if uniqueCommand[command] == "" {
-			uniqueCommands = append(uniqueCommands, command)
-			uniqueCommand[command] = command
+func ListRaw() []string {
+	return fsconfig.GetConfig().History.Commands
+}
+
+type Item struct {
+	ProjectID   string `json:"projectId"`
+	Cluster     string `json:"cluster"`
+	SqlInstance string `json:"sqlInstance"`
+	LocalPort   int    `json:"localPort"`
+	RemotePort  int    `json:"remotePort"`
+	ProxyType   string `json:"proxyType"`
+	Pod         string `json:"pod"`
+	Namespace   string `json:"namespace"`
+}
+
+func List() []Item {
+	stringCommands := ListRaw()
+
+	items := []Item{}
+	for _, raw := range stringCommands {
+		argsTokens := strings.Fields(raw)
+		item := Item{}
+		for _, token := range argsTokens {
+			argTokens := strings.Split(token, "=")
+			flag := argTokens[0]
+			value := argTokens[1]
+			switch flag {
+			case "-project":
+				item.ProjectID = value
+			case "-sql_instance":
+				item.SqlInstance = value
+			case "-proxy_type":
+				item.ProxyType = value
+			case "-local_port":
+				item.LocalPort, _ = strconv.Atoi(value)
+			case "-remote_port":
+				item.RemotePort, _ = strconv.Atoi(value)
+			case "-pod":
+				item.Pod = value
+			case "-namespace":
+				item.Namespace = value
+			case "-cluster":
+				item.Cluster = value
+
+			}
 		}
+		items = append(items, item)
 	}
-	store.Set(KeyCommands, uniqueCommands)
-	return uniqueCommands
+	return items
 }
 
 // Browse lets user choose from stored commands.
 // Goproxie is executed with given arguments.
 func Browse() {
-	storedCommands := store.Get(KeyCommands)
-	commands := []string{}
-	if storedCommands != nil {
-		// 💡 Conversion problem: []interface{} -> []string
-		// see https://stackoverflow.com/questions/44027826/convert-interface-to-string-in-golang
-		for _, item := range storedCommands.([]interface{}) {
-			commands = append(commands, fmt.Sprint(item))
-		}
-	}
-	commands = deduplicate(commands)
+	commands := ListRaw()
 
 	if len(commands) == 0 {
 		fmt.Println("History is empty")

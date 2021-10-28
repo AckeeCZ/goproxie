@@ -10,12 +10,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AckeeCZ/goproxie/internal/fsconfig"
 	"github.com/AckeeCZ/goproxie/internal/gcloud"
 	"github.com/AckeeCZ/goproxie/internal/history"
 	"github.com/AckeeCZ/goproxie/internal/kubectl"
 	"github.com/AckeeCZ/goproxie/internal/sqlproxy"
-	"github.com/AckeeCZ/goproxie/internal/store"
 	"github.com/AckeeCZ/goproxie/internal/version"
+	webui "github.com/AckeeCZ/goproxie/web-ui"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/briandowns/spinner"
 )
@@ -353,12 +354,22 @@ func main() {
 		}
 	}
 
+	if len(os.Args) > 1 && os.Args[1] == "backup" {
+		fsconfig.CreateBackup()
+		return
+	}
+
+	if len(os.Args) > 1 && os.Args[1] == "ui" {
+		webui.Start()
+		return
+	}
+
 	if len(os.Args) > 1 && os.Args[1] == "version" {
 		fmt.Println(version.Get())
 		return
 	}
 
-	store.Initialize()
+	fsconfig.Initialize()
 	if len(os.Args) > 1 && os.Args[1] == "history" {
 		history.Browse()
 		return
