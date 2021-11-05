@@ -7,12 +7,14 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/AckeeCZ/goproxie/internal/fsconfig"
 	"github.com/AckeeCZ/goproxie/internal/gcloud"
 	"github.com/AckeeCZ/goproxie/internal/kubectl"
 	"github.com/AckeeCZ/goproxie/internal/sqlproxy"
 	"github.com/AlecAivazis/survey/v2"
+	"golang.org/x/net/context"
 )
 
 // KeyCommands defines the configration key
@@ -37,14 +39,16 @@ func ListRaw() []string {
 }
 
 type Item struct {
-	ProjectID   string `json:"projectId"`
-	Cluster     string `json:"cluster"`
-	SqlInstance string `json:"sqlInstance"`
-	LocalPort   int    `json:"localPort"`
-	RemotePort  int    `json:"remotePort"`
-	ProxyType   string `json:"proxyType"`
-	Pod         string `json:"pod"`
-	Namespace   string `json:"namespace"`
+	ID          string
+	ProjectID   string
+	Cluster     string
+	SqlInstance string
+	LocalPort   int
+	RemotePort  int
+	ProxyType   string
+	Pod         string
+	Namespace   string
+	Raw         string
 }
 
 func List() []Item {
@@ -54,6 +58,8 @@ func List() []Item {
 	for _, raw := range stringCommands {
 		argsTokens := strings.Fields(raw)
 		item := Item{}
+		item.ID = strings.ReplaceAll(raw, " ", "")
+		item.Raw = raw
 		for _, token := range argsTokens {
 			argTokens := strings.Split(token, "=")
 			flag := argTokens[0]
@@ -75,7 +81,6 @@ func List() []Item {
 				item.Namespace = value
 			case "-cluster":
 				item.Cluster = value
-
 			}
 		}
 		items = append(items, item)
@@ -98,13 +103,30 @@ func Browse() {
 		Message: "Pick command from history",
 		Options: commands,
 	}, &pickedCommand)
+	ExecHistoryItem(pickedCommand)
+}
+
+func ExecHistoryItem(raw string) context.CancelFunc {
 	proxieBin := os.Args[0]
-	cmd := exec.Command(proxieBin, append(strings.Fields(pickedCommand), "--no-save")...)
+	// 💡 A good example of contexts. This one adds a cancel function,
+	// so for calls that supports this (in this case CommandContext, just a Command
+	// but allows you to pass in context).
+	ctx, cancel := context.WithCancel(context.Background())
+	cmd := exec.CommandContext(ctx, proxieBin, append(strings.Fields(raw), "--no-save")...)
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
-	err := cmd.Run()
-	if err != nil {
-		log.Fatal(err)
+	// Kill subprocess if the main process gets killed
+	// https://groups.google.com/g/golang-nuts/c/XoQ3RhFBJl8
+	// Without this I felt that _sometimes_ the opened connections kept being open
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Pdeathsig: syscall.SIGTERM,
 	}
+	go func() {
+		err := cmd.Run()
+		if err != nil {
+			log.Print(err)
+		}
+	}()
+	return cancel
 }

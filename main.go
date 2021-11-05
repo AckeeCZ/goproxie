@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"sort"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/AckeeCZ/goproxie/internal/fsconfig"
@@ -15,8 +13,9 @@ import (
 	"github.com/AckeeCZ/goproxie/internal/history"
 	"github.com/AckeeCZ/goproxie/internal/kubectl"
 	"github.com/AckeeCZ/goproxie/internal/sqlproxy"
+	"github.com/AckeeCZ/goproxie/internal/util"
 	"github.com/AckeeCZ/goproxie/internal/version"
-	webui "github.com/AckeeCZ/goproxie/web-ui"
+	webui "github.com/AckeeCZ/goproxie/internal/web-ui"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/briandowns/spinner"
 )
@@ -42,7 +41,7 @@ var readProxyType = func() ProxyType {
 		desiredProxyType = string(ProxyTypeSQL)
 	}
 	if desiredProxyType != "" {
-		filtered := filterStrings(proxyTypes, desiredProxyType)
+		filtered := util.FilterStrings(proxyTypes, desiredProxyType)
 		if len(filtered) > 0 {
 			proxyType = filtered[0]
 			fmt.Printf("Choose proxy type: %v\n", proxyType)
@@ -124,7 +123,7 @@ func promptSelection(sel selectField) interface{} {
 	pickedTitle := ""
 	if sel.valueTitle != "" {
 		// Apply selection, if set
-		filtered := filterStrings(optionTitles, sel.valueTitle)
+		filtered := util.FilterStrings(optionTitles, sel.valueTitle)
 		if len(filtered) > 0 {
 			pickedTitle = filtered[0]
 			fmt.Printf("%v: %v\n", sel.titleChoose, pickedTitle)
@@ -180,36 +179,6 @@ func readCluster(projectID string) (cluster *gcloud.Cluster) {
 		valueTitle: *flags.cluster,
 	}).(*gcloud.Cluster)
 	return
-}
-
-type byLength []string
-
-func (s byLength) Len() int {
-	return len(s)
-}
-func (s byLength) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
-}
-func (s byLength) Less(i, j int) bool {
-	return len(s[i]) < len(s[j])
-}
-
-func filterStrings(options []string, filter string) []string {
-	if len(filter) == 0 {
-		return options
-	}
-	results := []string{}
-
-	// Inspired by Survey's filtering
-	// https://github.com/AlecAivazis/survey/blob/59f4d6f95795f2e6b20526769ca4662ced786ccc/survey.go#L50
-	filter = strings.ToLower(filter)
-	for _, option := range options {
-		if strings.Contains(strings.ToLower(option), filter) {
-			results = append(results, option)
-		}
-	}
-	sort.Sort(byLength(results))
-	return results
 }
 
 func readNamespace() (namespace string) {
