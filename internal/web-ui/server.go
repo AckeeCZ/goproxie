@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/AckeeCZ/goproxie/internal/fsconfig"
 	"golang.org/x/net/websocket"
@@ -16,15 +17,32 @@ import (
 var server *http.Server
 var serverLogger = log.New(os.Stdout, "webserver: ", log.LstdFlags)
 
+// Return HTTP handler loading a JavaScript file relative to internal/web-ui/asset
+func staticJavaScriptController(path string) func(http.ResponseWriter, *http.Request) {
+	return func(res http.ResponseWriter, req *http.Request) {
+		res.Header().Add("Content-Type", "application/javascript")
+		staticController(path)(res, req)
+	}
+}
+
+func staticController(path string) func(http.ResponseWriter, *http.Request) {
+	return func(res http.ResponseWriter, req *http.Request) {
+		file, err := os.ReadFile(filepath.Join("internal", "web-ui", "asset", path))
+		if err != nil {
+			serverLogger.Printf("Failed to load static file %s: %s", path, err)
+			res.WriteHeader(404)
+			return
+		}
+		res.Write(file)
+	}
+}
+
 // Starts UI HTTP server
 func Start() {
 	fsconfig.Initialize()
 	handler := http.DefaultServeMux
 	// TODO Refactor assets to sth like assets({ javascript: [...], css: [...] })
-	handler.HandleFunc("/javascript.js", func(rw http.ResponseWriter, r *http.Request) {
-		rw.Header().Add("Content-Type", "application/javascript")
-		page.JavaScriptFile("./javascript.js", rw)
-	})
+	handler.HandleFunc("/javascript.js", staticJavaScriptController("javascript.js"))
 	handler.HandleFunc("/server.js", func(rw http.ResponseWriter, r *http.Request) {
 		rw.Header().Add("Content-Type", "application/javascript")
 		page.JavaScriptFile("./server.js", rw)
