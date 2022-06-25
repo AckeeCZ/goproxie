@@ -20,6 +20,23 @@ func ProjectsList() []string {
 	return strings.Fields(runCommand(gcloudPath, "projects", "list", "--format", "value(projectId)"))
 }
 
+// ProjectsListAllInfo returns the list of google cloud projects with all info
+// Returns [][]string{PROJECT_ID, NAME, PROJECT_NUMBER}
+func ProjectsListAllInfo() [][]string {
+	result := runCommand(gcloudPath, "projects", "list")
+	lines := strings.Split(result, "\n")
+	// Remove header
+	lines = lines[1:]
+	tokenizedLines := make([][]string, 0)
+	for _, line := range lines {
+		if len(line) == 0 {
+			continue
+		}
+		tokenizedLines = append(tokenizedLines, strings.Fields(line))
+	}
+	return tokenizedLines
+}
+
 // Cluster structure
 type Cluster struct {
 	Name     string

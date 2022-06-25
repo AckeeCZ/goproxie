@@ -56,8 +56,15 @@ export const disconnectRaw = async (raw) => {
 }
 
 connection.addMessageListener(server.connectionHealthIndicator)
+connection.addMessageListener(connectionsUpdates)
 
 const isNullish = (x) => (x === undefined || x === null)
+
+async function connectionsUpdates(message) {
+    if (message.type === 'connections-changed') {
+        await searchHistory(getQueryParam('query'))
+    }
+}
 
 /**
  * @param {HTMLElement} elem

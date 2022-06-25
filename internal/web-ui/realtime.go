@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 )
 
 var mutex = &sync.Mutex{}
-var realtimeLogger = log.New(os.Stdout, "webserver/realtime: ", log.LstdFlags)
+var realtimeLogger = log.New(io.Discard, "webserver/realtime: ", log.LstdFlags)
 
 type websocketKeepAliveReader struct {
 	// Dummy channel to wait forever in Read to block the Reader and keep WS alive
@@ -137,6 +138,9 @@ func (r *Realtime) WebSocketHandler(onNewConnection func()) websocket.Handler {
 }
 
 func NewRealtime() *Realtime {
+	if strings.Contains(os.Getenv("DEBUG"), "realtime") {
+		realtimeLogger = log.New(os.Stdout, "webserver/realtime: ", log.LstdFlags)
+	}
 	rt := Realtime{}
 	rt.websocketConnToReader = make(map[*websocket.Conn]*websocketKeepAliveReader)
 	rt.websocketConnections = make([]*websocket.Conn, 0)

@@ -4,9 +4,9 @@ import (
 	"html/template"
 	"io"
 	"log"
-	"os"
-	"path/filepath"
+	"strings"
 
+	"github.com/AckeeCZ/goproxie/internal/gcloud"
 	"github.com/AckeeCZ/goproxie/internal/history"
 	"github.com/AckeeCZ/goproxie/internal/util"
 	"github.com/AckeeCZ/goproxie/internal/version"
@@ -77,16 +77,40 @@ func (*HTMLFragment) HistoryCommandList(query string) template.HTML {
 	// 💡 Struct's props has to be with first-capital if you want template.HTML to be
 	// able to access it and read it
 	type it struct {
-		Command history.Item
-		Active  bool
+		Command               history.Item
+		Active                bool
+		ConnectDisabled       bool
+		ConnectWarningMessage string
+		ProjectDisplayName    string
+		ProjectTitle          string
+		PortNumber            int
 	}
+
 	items := make([]it, len(filteredRaws))
 	for i, raw := range filteredRaws {
 		for _, item := range list {
 			if item.Raw == raw {
+				port := state.PortInfo(item.LocalPort)
+				warningMessage := ""
+				if !port.Available {
+					if port.AvailableAfterProxyReplace {
+						warningMessage = "I will replace current proxy with this one on Connect"
+					} else {
+						warningMessage = "Port is unavailable. Kill process occuping this port first"
+					}
+				}
 				items[i] = it{
-					Command: item,
-					Active:  state.historyRawToIsActive[item.Raw],
+					Command:               item,
+					Active:                state.IsRawActive(item.Raw),
+					ConnectDisabled:       !port.Available && !port.AvailableAfterProxyReplace,
+					ConnectWarningMessage: warningMessage,
+					ProjectDisplayName:    item.ProjectID,
+					ProjectTitle:          "Project ID",
+					PortNumber:            item.LocalPort,
+				}
+				if projectMeta := gcloud.ProjectMetadata.GetProjectById(item.ProjectID); projectMeta != nil && projectMeta.ID != projectMeta.Name {
+					items[i].ProjectDisplayName = strings.Join([]string{projectMeta.Name, " ", "(", project, ")"}, "")
+					items[i].ProjectTitle = projectMeta.ID
 				}
 				break
 			}
@@ -110,21 +134,4 @@ func (p *WebUIPage) Main(wr io.Writer, param struct {
 		"historyCommandSearch": p.fragment.HistoryCommandSearch(param.searchQuery),
 	}
 	executeTemplate(wr, "main.html", data)
-}
-
-func (p *WebUIPage) JavaScriptFile(path string, wr io.Writer) {
-	p.Asset(path, wr)
-}
-
-func (p *WebUIPage) Asset(path string, wr io.Writer) {
-	res, err := os.ReadFile(filepath.Join("internal", "web-ui", "asset", path))
-	if err != nil {
-		serverLogger.Printf("Failed to load asset file %s: %s", path, err)
-		return
-	}
-	wr.Write(res)
-}
-
-func (p *WebUIPage) Favicon(wr io.Writer) {
-	p.Asset("favicon.ico", wr)
 }

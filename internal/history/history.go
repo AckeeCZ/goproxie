@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/AckeeCZ/goproxie/internal/fsconfig"
@@ -51,39 +52,44 @@ type Item struct {
 	Raw         string
 }
 
+func ParseRaw(raw string) *Item {
+	argsTokens := strings.Fields(raw)
+	item := Item{}
+	item.ID = strings.ReplaceAll(raw, " ", "")
+	item.Raw = raw
+	for _, token := range argsTokens {
+		argTokens := strings.Split(token, "=")
+		flag := argTokens[0]
+		value := argTokens[1]
+		switch flag {
+		case "-project":
+			item.ProjectID = value
+		case "-sql_instance":
+			item.SqlInstance = value
+		case "-proxy_type":
+			item.ProxyType = value
+		case "-local_port":
+			item.LocalPort, _ = strconv.Atoi(value)
+		case "-remote_port":
+			item.RemotePort, _ = strconv.Atoi(value)
+		case "-pod":
+			item.Pod = value
+		case "-namespace":
+			item.Namespace = value
+		case "-cluster":
+			item.Cluster = value
+		}
+	}
+	return &item
+}
+
 func List() []Item {
 	stringCommands := ListRaw()
 
 	items := []Item{}
 	for _, raw := range stringCommands {
-		argsTokens := strings.Fields(raw)
-		item := Item{}
-		item.ID = strings.ReplaceAll(raw, " ", "")
-		item.Raw = raw
-		for _, token := range argsTokens {
-			argTokens := strings.Split(token, "=")
-			flag := argTokens[0]
-			value := argTokens[1]
-			switch flag {
-			case "-project":
-				item.ProjectID = value
-			case "-sql_instance":
-				item.SqlInstance = value
-			case "-proxy_type":
-				item.ProxyType = value
-			case "-local_port":
-				item.LocalPort, _ = strconv.Atoi(value)
-			case "-remote_port":
-				item.RemotePort, _ = strconv.Atoi(value)
-			case "-pod":
-				item.Pod = value
-			case "-namespace":
-				item.Namespace = value
-			case "-cluster":
-				item.Cluster = value
-			}
-		}
-		items = append(items, item)
+		item := ParseRaw(raw)
+		items = append(items, *item)
 	}
 	return items
 }
@@ -106,7 +112,13 @@ func Browse() {
 	ExecHistoryItem(pickedCommand)
 }
 
-func ExecHistoryItem(raw string) context.CancelFunc {
+type SpawnedHistoryCommand struct {
+	Raw  string
+	Kill func()
+	Wait func()
+}
+
+func ExecHistoryItem(raw string) *SpawnedHistoryCommand {
 	proxieBin := os.Args[0]
 	// 💡 A good example of contexts. This one adds a cancel function,
 	// so for calls that supports this (in this case CommandContext, just a Command
@@ -119,14 +131,23 @@ func ExecHistoryItem(raw string) context.CancelFunc {
 	// Kill subprocess if the main process gets killed
 	// https://groups.google.com/g/golang-nuts/c/XoQ3RhFBJl8
 	// Without this I felt that _sometimes_ the opened connections kept being open
+	// occupying the port.
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Pdeathsig: syscall.SIGTERM,
 	}
+	spawn := &SpawnedHistoryCommand{}
+	life := sync.WaitGroup{}
+	spawn.Kill = cancel
+	spawn.Wait = func() {
+		life.Wait()
+	}
+	life.Add(1)
 	go func() {
 		err := cmd.Run()
 		if err != nil {
 			log.Print(err)
 		}
+		life.Done()
 	}()
-	return cancel
+	return spawn
 }

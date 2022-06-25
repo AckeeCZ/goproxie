@@ -5,10 +5,19 @@
             {{ if $item.Active }}
             <input class="button is-success" type="submit" data-action="history-item-raw/{id}/disconnect" data-action-params="{{ $item.Command.ID }}" data-action-payload="{{ $item.Command.Raw }}" value="Disconnect" />
             {{ else }}
-            <input class="button is-light" type="submit" data-action="history-item-raw/{id}/connect" data-action-params="{{ $item.Command.ID }}" data-action-payload="{{ $item.Command.Raw }}" value="Connect" />
+                
+                    <button class="button is-light" {{ if $item.ConnectDisabled }}disabled{{ end }} type="submit" data-action="history-item-raw/{id}/connect" data-action-params="{{ $item.Command.ID }}" data-action-payload="{{ $item.Command.Raw }}" value="Connect">
+                        {{ if $item.ConnectWarningMessage }}
+                            Connect <span title="{{ $item.ConnectWarningMessage }}">⚠️</span>
+                        {{ else }}
+                            Connect
+                        {{ end }}
+                    </button>
             {{ end }}
         </div>
-        <span class="tag is-info is-light">{{ $item.Command.ProjectID }}</span>
+    
+    <span class="tag is-info is-light" title="{{ $item.ProjectTitle }}">{{ $item.ProjectDisplayName }}</span>
+    <span class="tag is-light">{{ $item.PortNumber }}</span>
     {{ $item.Command.Pod }}
     {{ $item.Command.SqlInstance }}
         <div class="content is-small">{{ $item.Command.Raw }}</div>

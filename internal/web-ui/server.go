@@ -21,13 +21,19 @@ var serverLogger = log.New(os.Stdout, "webserver: ", log.LstdFlags)
 func staticJavaScriptController(path string) func(http.ResponseWriter, *http.Request) {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Add("Content-Type", "application/javascript")
-		staticController(path)(res, req)
+		staticController(filepath.Join("asset", path))(res, req)
+	}
+}
+
+func staticFaviconController() func(http.ResponseWriter, *http.Request) {
+	return func(res http.ResponseWriter, req *http.Request) {
+		staticController(filepath.Join("asset", "favicon.ico"))(res, req)
 	}
 }
 
 func staticController(path string) func(http.ResponseWriter, *http.Request) {
 	return func(res http.ResponseWriter, req *http.Request) {
-		file, err := os.ReadFile(filepath.Join("internal", "web-ui", "asset", path))
+		file, err := os.ReadFile(filepath.Join("internal", "web-ui", path))
 		if err != nil {
 			serverLogger.Printf("Failed to load static file %s: %s", path, err)
 			res.WriteHeader(404)
@@ -41,15 +47,9 @@ func staticController(path string) func(http.ResponseWriter, *http.Request) {
 func Start() {
 	fsconfig.Initialize()
 	handler := http.DefaultServeMux
-	// TODO Refactor assets to sth like assets({ javascript: [...], css: [...] })
 	handler.HandleFunc("/javascript.js", staticJavaScriptController("javascript.js"))
-	handler.HandleFunc("/server.js", func(rw http.ResponseWriter, r *http.Request) {
-		rw.Header().Add("Content-Type", "application/javascript")
-		page.JavaScriptFile("./server.js", rw)
-	})
-	handler.HandleFunc("/favicon.ico", func(rw http.ResponseWriter, r *http.Request) {
-		page.Favicon(rw)
-	})
+	handler.HandleFunc("/server.js", staticJavaScriptController("server.js"))
+	handler.HandleFunc("/favicon.ico", staticFaviconController())
 	handler.HandleFunc("/history-commands-list", func(rw http.ResponseWriter, r *http.Request) {
 		rw.Write([]byte(page.fragment.HistoryCommandList(r.URL.Query().Get("query"))))
 	})
@@ -92,6 +92,11 @@ func Start() {
 	handler.Handle("/rt", realtime.WebSocketHandler(func() {
 
 	}))
+	go func() {
+		for event := range state.events {
+			realtime.Write(event, event)
+		}
+	}()
 	server = &http.Server{
 		Handler: logged(handler),
 	}
