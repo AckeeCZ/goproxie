@@ -1,4 +1,17 @@
+## ⚠️ Deprecation Notice
+
+As of 2024-02-13, this repository is **deprecated** and no longer actively maintained. We recommend using official [cloud-sql-proxy](https://github.com/GoogleCloudPlatform/cloud-sql-proxy) as a replacement. 
+
+### Key Points:
+- No new features or bug fixes will be implemented.
+- Issues and pull requests may not be addressed.
+- The repository may be archived in the future.
+
+Thank you for your support!
+
+
 # goproxie
+
 
 [![Build Status](https://travis-ci.com/AckeeCZ/goproxie.svg?branch=master)](https://travis-ci.com/AckeeCZ/goproxie)
 [![Coverage Status](https://coveralls.io/repos/github/AckeeCZ/goproxie/badge.svg?branch=master)](https://coveralls.io/github/AckeeCZ/goproxie?branch=master)
